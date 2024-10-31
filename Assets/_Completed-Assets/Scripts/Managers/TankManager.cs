@@ -8,7 +8,7 @@ namespace Complete
     {
         // This class is to manage various settings on a tank.
         // It works with the GameManager class to control how the tanks behave
-        // and whether or not players have control of their tank in the 
+        // and whether or not players have control of their tank in the
         // different phases of the game.
 
         public Color m_PlayerColor;                             // This is the color this tank will be tinted.
@@ -17,13 +17,15 @@ namespace Complete
         [HideInInspector] public string m_ColoredPlayerText;    // A string that represents the player with their number colored to match their tank.
         [HideInInspector] public GameObject m_Instance;         // A reference to the instance of the tank when it is created.
         [HideInInspector] public int m_Wins;                    // The number of wins this player has so far.
-        
+
 
         private TankMovement m_Movement;                        // Reference to tank's movement script, used to disable and enable control.
         private TankShooting m_Shooting;                        // Reference to tank's shooting script, used to disable and enable control.
         private GameObject m_CanvasGameObject;                  // Used to disable the world space UI during the Starting and Ending phases of each round.
         public Transform m_TurretTransform;                     // 砲塔のTransformを格納するプロパティ
 
+        public delegate void OnWeaponStockChanged(int playerNumber, int currentStock); // 番号と砲弾の所持数を通知する
+        public event OnWeaponStockChanged cannonballStockChanged;   // 砲弾所持数が変化したときのイベント
         public void Setup ()
         {
             // Get references to the components.
@@ -48,6 +50,11 @@ namespace Complete
                 // ... set their material color to the color specific to this tank.
                 renderers[i].material.color = m_PlayerColor;
             }
+             m_Shooting.ShellStockChanged += HandleShellStockChanged;
+        }
+         private void HandleShellStockChanged(int currentStock)
+        {
+            cannonballStockChanged?.Invoke(m_PlayerNumber, currentStock); //プレイヤー番号と砲弾の所持数の通知を行う
         }
 
 

@@ -16,12 +16,19 @@ namespace Complete
         public float m_MaxLaunchForce = 30f;        // The force given to the shell if the fire button is held for the max charge time.
         public float m_MaxChargeTime = 0.75f;       // How long the shell can charge for before it is fired at max force.
 
+        public int initcannonball = 10; //初期の砲弾数
+        public int currentcannonball; //現在の砲弾数
+        public int maxCannonball = 50; //砲弾数の最大値
+        public int replenishCannonball = 10; // 補充時に追加される砲弾数
+        public bool isCharge; //飛距離ゲージのbool変数
 
         private string m_FireButton;                // The input axis that is used for launching shells.
         private float m_CurrentLaunchForce;         // The force that will be given to the shell when the fire button is released.
         private float m_ChargeSpeed;                // How fast the launch force increases, based on the max charge time.
         private bool m_Fired;                       // Whether or not the shell has been launched with this button press.
 
+        public delegate void OnShellStockChanged(int currentStock); // 砲弾所持数変化イベント参照
+        public event OnShellStockChanged ShellStockChanged;         // 砲弾所持数が変化したときのイベント
 
         private void OnEnable()
         {
@@ -32,51 +39,62 @@ namespace Complete
 
 
         private void Start ()
-        {
+        {   currentcannonball = initcannonball; // 砲弾の所持数を初期化
             // The fire axis is based on the player number.
             m_FireButton = "Fire" + m_PlayerNumber;
 
             // The rate that the launch force charges up is the range of possible forces by the max charge time.
             m_ChargeSpeed = (m_MaxLaunchForce - m_MinLaunchForce) / m_MaxChargeTime;
+
+            ShellStockChanged?.Invoke(currentcannonball); // 初期所持数（１０個）をイベントで通知
         }
 
 
-        private void Update ()
+        private void Update()
         {
-            // The slider should have a default value of the minimum launch force.
-            m_AimSlider.value = m_MinLaunchForce;
-
-            // If the max force has been exceeded and the shell hasn't yet been launched...
-            if (m_CurrentLaunchForce >= m_MaxLaunchForce && !m_Fired)
+            if (currentcannonball <= 0)
             {
-                // ... use the max force and launch the shell.
-                m_CurrentLaunchForce = m_MaxLaunchForce;
-                Fire ();
+                return;
             }
-            // Otherwise, if the fire button has just started being pressed...
-            else if (Input.GetButtonDown (m_FireButton))
+
+            // エイムスライダーの値を更新
+            m_AimSlider.value = m_CurrentLaunchForce;
+
+            // 発射ボタンが押されたとき
+            if (Input.GetButtonDown(m_FireButton))
             {
-                // ... reset the fired flag and reset the launch force.
                 m_Fired = false;
                 m_CurrentLaunchForce = m_MinLaunchForce;
 
-                // Change the clip to the charging clip and start it playing.
+                // チャージ音を再生
                 m_ShootingAudio.clip = m_ChargingClip;
-                m_ShootingAudio.Play ();
+                m_ShootingAudio.Play();
             }
-            // Otherwise, if the fire button is being held and the shell hasn't been launched yet...
-            else if (Input.GetButton (m_FireButton) && !m_Fired)
+            // 発射ボタンを押し続けている間
+            else if (Input.GetButton(m_FireButton) && !m_Fired)
             {
-                // Increment the launch force and update the slider.
+                // 発射力を増減させる
                 m_CurrentLaunchForce += m_ChargeSpeed * Time.deltaTime;
 
+                // 発射力が最大値または最小値に達したら、チャージ速度の符号を反転
+                if (m_CurrentLaunchForce >= m_MaxLaunchForce)
+                {
+                    m_CurrentLaunchForce = m_MaxLaunchForce;
+                    m_ChargeSpeed = -m_ChargeSpeed; // 減少に転じる
+                }
+                else if (m_CurrentLaunchForce <= m_MinLaunchForce)
+                {
+                    m_CurrentLaunchForce = m_MinLaunchForce;
+                    m_ChargeSpeed = -m_ChargeSpeed; // 増加に転じる
+                }
+
+                // エイムスライダーの値を更新
                 m_AimSlider.value = m_CurrentLaunchForce;
             }
-            // Otherwise, if the fire button is released and the shell hasn't been launched yet...
-            else if (Input.GetButtonUp (m_FireButton) && !m_Fired)
+            // 発射ボタンを離したとき
+            else if (Input.GetButtonUp(m_FireButton) && !m_Fired)
             {
-                // ... launch the shell.
-                Fire ();
+                Fire();
             }
         }
 
@@ -85,6 +103,9 @@ namespace Complete
         {
             // Set the fired flag so only Fire is only called once.
             m_Fired = true;
+
+            currentcannonball--; //砲弾を一つ消費
+            ShellStockChanged?.Invoke(currentcannonball); // 所持数が変化(-1)したことをイベントで通知
 
             // Create an instance of the shell and store a reference to it's rigidbody.
             Rigidbody shellInstance =
@@ -99,6 +120,29 @@ namespace Complete
 
             // Reset the launch force.  This is a precaution in case of missing button events.
             m_CurrentLaunchForce = m_MinLaunchForce;
+             // Reset the fired flag so the tank can fire again.
+            m_Fired = false;
+        }
+          public void ReplenishCannonballs()
+        {
+            currentcannonball += replenishCannonball; //現在の所持数＋追加取得数
+
+            // 砲弾の所持数が最大数を超えないように調整
+            if (currentcannonball > maxCannonball)
+            {
+                currentcannonball = maxCannonball;
+            }
+            ShellStockChanged?.Invoke(currentcannonball); // 所持数が変化(+10)したことをイベントで通知
+        }
+          // 衝突時に呼ばれるメソッド
+        private void OnCollisionEnter(Collision collision)
+        {
+            // 衝突したオブジェクトのタグが"ShellCartridge"の場合
+            if (collision.gameObject.CompareTag("ShellCartridge"))
+            {
+                // 砲弾を補充
+                ReplenishCannonballs();
+            }
         }
     }
 }

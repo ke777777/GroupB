@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
+
 namespace Complete
 {
     public class GameManager : MonoBehaviour
@@ -15,13 +16,20 @@ namespace Complete
         public GameObject m_TankPrefab;             // Reference to the prefab the players will control.
         public TankManager[] m_Tanks;               // A collection of managers for enabling and disabling different aspects of the tanks.
 
-        
+
         private int m_RoundNumber;                  // Which round the game is currently on.
         private WaitForSeconds m_StartWait;         // Used to have a delay whilst the round starts.
         private WaitForSeconds m_EndWait;           // Used to have a delay whilst the round or game ends.
         private TankManager m_RoundWinner;          // Reference to the winner of the current round.  Used to make an announcement of who won.
         private TankManager m_GameWinner;           // Reference to the winner of the game.  Used to make an announcement of who won.
 
+        public enum GameState
+        {
+            RoundStarting,RoundPlaying,RoundEnding
+        }
+        public GameState CurrentGameState { get; private set; }
+        public delegate void OnGameStateChanged(GameState newGameState);
+        public event OnGameStateChanged GameStateChanged;
 
         private void Start()
         {
@@ -60,14 +68,23 @@ namespace Complete
             for (int i = 0; i < targets.Length; i++)
             {
                 // ... set it to the appropriate tank transform.
-                targets[i] = m_Tanks[i].m_TurretTransform; // –C“ƒ‚ÌTransform‚ðÝ’è
+                targets[i] = m_Tanks[i].m_TurretTransform; // –C“ƒ‚ÌTransform‚ðÝ’è
             }
 
             // These are the targets the camera should follow.
             m_CameraControl.m_Targets = targets;
         }
 
+        private void SetGameState(GameState newState)
+        {
+            if (CurrentGameState == newState)
+                return;
 
+            CurrentGameState = newState;
+
+            // ????????????????????????
+            GameStateChanged?.Invoke(newState);
+        }
         // This is called from start and will run each phase of the game one after another.
         private IEnumerator GameLoop ()
         {
@@ -97,6 +114,7 @@ namespace Complete
 
         private IEnumerator RoundStarting ()
         {
+            SetGameState(GameState.RoundStarting); //????????????
             // As soon as the round starts reset the tanks and make sure they can't move.
             ResetAllTanks ();
             DisableTankControl ();
@@ -115,6 +133,7 @@ namespace Complete
 
         private IEnumerator RoundPlaying ()
         {
+            SetGameState(GameState.RoundPlaying); //???????????
             // As soon as the round begins playing let the players control the tanks.
             EnableTankControl ();
 
@@ -132,6 +151,7 @@ namespace Complete
 
         private IEnumerator RoundEnding ()
         {
+            SetGameState(GameState.RoundEnding); //????????????
             // Stop tanks from moving.
             DisableTankControl ();
 
@@ -174,8 +194,7 @@ namespace Complete
             // If there are one or fewer tanks remaining return true, otherwise return false.
             return numTanksLeft <= 1;
         }
-        
-        
+
         // This function is to find out if there is a winner of the round.
         // This function is called with the assumption that 1 or fewer tanks are currently active.
         private TankManager GetRoundWinner()
