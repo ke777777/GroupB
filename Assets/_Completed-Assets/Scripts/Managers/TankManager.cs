@@ -1,10 +1,10 @@
 ﻿using System;
 using UnityEngine;
+using System.Collections;
 
 namespace Complete
 {
-    [Serializable]
-    public class TankManager
+    [Serializable] public class TankManager
     {
         // This class is to manage various settings on a tank.
         // It works with the GameManager class to control how the tanks behave
@@ -24,8 +24,8 @@ namespace Complete
         private GameObject m_CanvasGameObject;                  // Used to disable the world space UI during the Starting and Ending phases of each round.
         public Transform m_TurretTransform;                     // 砲塔のTransformを格納するプロパティ
 
-        public delegate void OnWeaponStockChanged(int playerNumber, int currentStock); // 番号と砲弾の所持数を通知する
-        public event OnWeaponStockChanged cannonballStockChanged;   // 砲弾所持数が変化したときのイベント
+        public delegate void OnWeaponStockChanged(int playerNumber, string weaponName, int currentStock);
+        public event OnWeaponStockChanged WeaponStockChanged;   // 砲弾所持数が変化したときのイベント
         public void Setup ()
         {
             // Get references to the components.
@@ -50,14 +50,25 @@ namespace Complete
                 // ... set their material color to the color specific to this tank.
                 renderers[i].material.color = m_PlayerColor;
             }
-             m_Shooting.ShellStockChanged += HandleShellStockChanged;
+            m_Shooting.WeaponStockChanged += HandleWeaponStockChanged;
+
+            m_Shooting.MinePlaced += HandleMinePlaced;
         }
-         private void HandleShellStockChanged(int currentStock)
+         private void HandleWeaponStockChanged(string weaponName, int currentStock)
         {
-            cannonballStockChanged?.Invoke(m_PlayerNumber, currentStock); //プレイヤー番号と砲弾の所持数の通知を行う
+            WeaponStockChanged?.Invoke(m_PlayerNumber, weaponName, currentStock); //プレイヤー番号と砲弾の所持数の通知を行う
         }
 
-
+        private IEnumerator TemporarilyStopMovement()
+        {
+            DisableControl();
+            yield return new WaitForSeconds(2.0f); // 2秒間動きを止める
+            EnableControl();
+        }
+        private void HandleMinePlaced()
+        {
+            m_Instance.GetComponent<MonoBehaviour>().StartCoroutine(TemporarilyStopMovement());
+        }
         // Used during the phases of the game where the player shouldn't be able to control their tank.
         public void DisableControl ()
         {

@@ -68,7 +68,7 @@ namespace Complete
             for (int i = 0; i < targets.Length; i++)
             {
                 // ... set it to the appropriate tank transform.
-                targets[i] = m_Tanks[i].m_TurretTransform; // �C����Transform��ݒ�
+                targets[i] = m_Tanks[i].m_TurretTransform;
             }
 
             // These are the targets the camera should follow.
@@ -82,7 +82,6 @@ namespace Complete
 
             CurrentGameState = newState;
 
-            // ????????????????????????
             GameStateChanged?.Invoke(newState);
         }
         // This is called from start and will run each phase of the game one after another.
@@ -114,7 +113,7 @@ namespace Complete
 
         private IEnumerator RoundStarting ()
         {
-            SetGameState(GameState.RoundStarting); //????????????
+            SetGameState(GameState.RoundStarting);
             // As soon as the round starts reset the tanks and make sure they can't move.
             ResetAllTanks ();
             DisableTankControl ();
@@ -133,7 +132,7 @@ namespace Complete
 
         private IEnumerator RoundPlaying ()
         {
-            SetGameState(GameState.RoundPlaying); //???????????
+            SetGameState(GameState.RoundPlaying);
             // As soon as the round begins playing let the players control the tanks.
             EnableTankControl ();
 
@@ -151,7 +150,7 @@ namespace Complete
 
         private IEnumerator RoundEnding ()
         {
-            SetGameState(GameState.RoundEnding); //????????????
+            SetGameState(GameState.RoundEnding);
             // Stop tanks from moving.
             DisableTankControl ();
 

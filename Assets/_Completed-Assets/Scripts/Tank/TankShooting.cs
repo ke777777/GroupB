@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
-
+using System.Collections.Generic;
 namespace Complete
 {
     public class TankShooting : MonoBehaviour
@@ -27,9 +27,21 @@ namespace Complete
         private float m_ChargeSpeed;                // How fast the launch force increases, based on the max charge time.
         private bool m_Fired;                       // Whether or not the shell has been launched with this button press.
 
-        public delegate void OnShellStockChanged(int currentStock); // 砲弾所持数変化イベント参照
-        public event OnShellStockChanged ShellStockChanged;         // 砲弾所持数が変化したときのイベント
+        private Dictionary<string, WeaponStockData> weaponStockDictionary = new Dictionary<string, WeaponStockData>()
+        {
+            { "Shell", new WeaponStockData(10, 50, 10) },
+            { "Mine", new WeaponStockData(1, 3, 1) }
+        };
+        private WeaponStockData shellStockData; //砲弾の所持数
+        private WeaponStockData mineStockData; //地雷の所持数
 
+        [SerializeField] private GameObject minePrefab;
+        private string minePlaceButton;
+        public delegate void OnWeaponStockChanged(string weaponName,int currentStock);   // 地雷の所持数が変化したことを通知するイベントを呼びだす
+        public event OnWeaponStockChanged WeaponStockChanged;            // 地雷所持数の変化を通知
+
+        public delegate void OnMinePlaced();                         // 地雷設置されたことを通知するイベントを呼び出す
+        public event OnMinePlaced MinePlaced;
         private void OnEnable()
         {
             // When the tank is turned on, reset the launch force and the UI
@@ -38,7 +50,7 @@ namespace Complete
         }
 
 
-        private void Start ()
+        /*private void Start ()
         {   currentcannonball = initcannonball; // 砲弾の所持数を初期化
             // The fire axis is based on the player number.
             m_FireButton = "Fire" + m_PlayerNumber;
@@ -47,12 +59,37 @@ namespace Complete
             m_ChargeSpeed = (m_MaxLaunchForce - m_MinLaunchForce) / m_MaxChargeTime;
 
             ShellStockChanged?.Invoke(currentcannonball); // 初期所持数（１０個）をイベントで通知
+            minePlaceButton = "PlaceMine" + m_PlayerNumber;
+            WeaponStockChanged?.Invoke(mineStockData.CurrentMineNumber); // 初期地雷所持数を通知
+        }*/
+
+        private void Start()
+        {
+            shellStockData = new WeaponStockData(10, 50, 10);
+            mineStockData = new WeaponStockData(1, 3, 1);
+
+            // 武器の初期化と辞書登録
+            weaponStockDictionary = new Dictionary<string, WeaponStockData>
+            {
+                { "Mine", mineStockData },
+                { "Shell", shellStockData }
+            };
+
+            // 各武器の初期所持数を設定
+            foreach (var weapon in weaponStockDictionary)
+            {
+                weapon.Value.InitializeWeaponnumber();
+                WeaponStockChanged?.Invoke(weapon.Key, weapon.Value.CurrentWeaponNumber); // 初期所持数を通知
+            }
+
+            m_FireButton = "Fire" + m_PlayerNumber;
+            minePlaceButton = "PlaceMine" + m_PlayerNumber;
+
+            m_ChargeSpeed = (m_MaxLaunchForce - m_MinLaunchForce) / m_MaxChargeTime;
         }
-
-
         private void Update()
         {
-            if (currentcannonball <= 0)
+            if (weaponStockDictionary["Shell"].CurrentWeaponNumber <= 0)
             {
                 return;
             }
@@ -96,6 +133,10 @@ namespace Complete
             {
                 Fire();
             }
+            if (Input.GetButtonDown(minePlaceButton))
+            {
+                PlaceMine();
+            }
         }
 
 
@@ -104,8 +145,8 @@ namespace Complete
             // Set the fired flag so only Fire is only called once.
             m_Fired = true;
 
-            currentcannonball--; //砲弾を一つ消費
-            ShellStockChanged?.Invoke(currentcannonball); // 所持数が変化(-1)したことをイベントで通知
+            weaponStockDictionary["Shell"].DecrementWeaponNumber();
+            WeaponStockChanged?.Invoke("Shell", weaponStockDictionary["Shell"].CurrentWeaponNumber);
 
             // Create an instance of the shell and store a reference to it's rigidbody.
             Rigidbody shellInstance =
@@ -123,7 +164,8 @@ namespace Complete
              // Reset the fired flag so the tank can fire again.
             m_Fired = false;
         }
-          public void ReplenishCannonballs()
+
+        /* public void ReplenishCannonballs()
         {
             currentcannonball += replenishCannonball; //現在の所持数＋追加取得数
 
@@ -133,16 +175,39 @@ namespace Complete
                 currentcannonball = maxCannonball;
             }
             ShellStockChanged?.Invoke(currentcannonball); // 所持数が変化(+10)したことをイベントで通知
-        }
-          // 衝突時に呼ばれるメソッド
+        } */
+
         private void OnCollisionEnter(Collision collision)
         {
-            // 衝突したオブジェクトのタグが"ShellCartridge"の場合
             if (collision.gameObject.CompareTag("ShellCartridge"))
             {
-                // 砲弾を補充
-                ReplenishCannonballs();
+                weaponStockDictionary["Shell"].GainingWeaponNunber();
+                WeaponStockChanged?.Invoke("Shell", weaponStockDictionary["Shell"].CurrentWeaponNumber);
             }
+
+            // 地雷カートリッジに衝突した場合
+            if (collision.gameObject.CompareTag("MineCartridge"))
+            {
+                weaponStockDictionary["Mine"].GainingWeaponNunber();
+                WeaponStockChanged?.Invoke("Mine", weaponStockDictionary["Mine"].CurrentWeaponNumber);
+            }
+        }
+        private void PlaceMine()
+        {
+            // 地雷の所持数が0以下の場合は設置できないようにする
+            if (weaponStockDictionary["Mine"].CurrentWeaponNumber <= 0)
+            {
+                return;
+            }
+
+            // 地雷を生成
+            Instantiate(minePrefab, transform.position, Quaternion.identity);
+
+            weaponStockDictionary["Mine"].DecrementWeaponNumber();
+            WeaponStockChanged?.Invoke("Mine", weaponStockDictionary["Mine"].CurrentWeaponNumber);
+
+            // 地雷を設置したことを通知
+            MinePlaced?.Invoke();
         }
     }
 }

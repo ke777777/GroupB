@@ -1,30 +1,30 @@
 using UnityEngine;
 using System.Collections;
-using System.Runtime.InteropServices;
+
 
 namespace Complete
 {
     public class CartridgeSpawner : MonoBehaviour
     {
-        [SerializeField] private GameObject shellCartridgePrefab;
+        [SerializeField] private CartridgeData cartridgeData;
         private GameManager gameManager;
         private Coroutine spawnCoroutine;
 
-        // ランダムな位置にプレハブを生成するメソッド
-        public void SpawnCartridge()
+
+        public void SpawnCartridge(CartridgeData data)
         {
-            if (shellCartridgePrefab == null)
+            if (data.cartridgePrefab == null)
             {
-                Debug.LogError("shellCartridgePrefabがnullです。Instantiateできません。");
+                Debug.LogError("cartridgePrefabがnullです。Instantiateできません。");
                 return;
             }
 
             Vector3 randomPosition = new Vector3(
-                Random.Range(-10f, 10f),  // X座標の範囲
-                1f,                       // Y座標（固定）
-                Random.Range(-10f, 10f)   // Z座標の範囲
-            );
-            Instantiate(shellCartridgePrefab, randomPosition, Quaternion.identity);
+                Random.Range(-10f, 10f), // X座標の範囲
+                1f,                      // Y座標（固定）
+                Random.Range(-10f, 10f)  // Z座標の範囲
+            ) + data.spawnPosition; // spawnPositionをオフセットとして使用
+            Instantiate(data.cartridgePrefab, randomPosition, Quaternion.identity);
         }
 
         private void HandleGameStateChanged(GameManager.GameState newState)
@@ -33,7 +33,7 @@ namespace Complete
             {
                 if (spawnCoroutine == null)
                 {
-                    spawnCoroutine = StartCoroutine(SpawnRoutine());
+                    spawnCoroutine = StartCoroutine(SpawnRoutine(cartridgeData));
                 }
             }
             else
@@ -47,12 +47,12 @@ namespace Complete
         }
 
         // 定期的にSpawnCartridgeを呼び出すコルーチン
-        private IEnumerator SpawnRoutine()
+        private IEnumerator SpawnRoutine(CartridgeData data)
         {
             while (true)
             {
-                SpawnCartridge(); // Cartridgeを生成
-                yield return new WaitForSeconds(3f);  // 一定時間待機（3秒間隔で生成）
+                SpawnCartridge(data); // CartridgeDataを使用してCartridgeを生成
+                yield return new WaitForSeconds(data.spawnFrequency); // CartridgeDataから頻度を取得
             }
         }
 
@@ -60,8 +60,16 @@ namespace Complete
         {
             // GameManagerオブジェクトを取得
             gameManager = FindObjectOfType<GameManager>();
+            if (cartridgeData == null || cartridgeData.cartridgePrefab == null)
+            {
+                Debug.LogError("cartridgeDataまたはcartridgePrefabが設定されていません。処理を中断します。");
+                return;
+            }
 
-            gameManager.GameStateChanged += HandleGameStateChanged;
+            if (gameManager != null)
+            {
+                gameManager.GameStateChanged += HandleGameStateChanged;
+            }
         }
 
         private void OnDestroy()
