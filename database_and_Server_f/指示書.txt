@@ -4,7 +4,7 @@
 　(2 ※1)docker start centos7f　　　　　　　　　　　　　　　　 //コンテナが動いてないなら、これで動かす
 　(2 ※2)docker exec -it centos7f /bin/bash　　　　　　　　　  //(2)コンテナに入っていない場合、これでコンテナの中に入る
 (3)vi /etc/yum.repos.d/CentOS-Base.repo　　　　　　　　　　　　//CentOS-Base.repoファイルを開く
-(4)mirrorlistをコメントアウトして、baseurlを指定する　　　　　 //iを押すとコメントモードになり書き込みが可能になる
+(4)mirrorlistをコメントアウトして、baseurlを指定する　　　　　 //iを押すとコメントモードになり書き込みが可能になる、CentOS-Base.repo.txtと同じになるように変更して。
 (5)ファイルから出る　　　　　　　　　　　　　　　　　　　　　　//Escボタンを押して:wqでファイルから出る
 (6)yum update                                                  //yumコマンドをupdateする
 (7)exitでコンテナから出る
