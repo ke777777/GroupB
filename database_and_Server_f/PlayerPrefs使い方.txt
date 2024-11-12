@@ -1,0 +1,23 @@
+保存（Set）、読み込み（Get）、削除（Delete)が基本操作
+
+１.データ保存
+・ SetString(key, value)
+・ SetInt(key, value)
+・ SetFloat(key, value)
+例
+PlayerPrefs.SetString("PlayerName", "JohnDoe");　// 文字列の保存
+PlayerPrefs.SetInt("HighScore", 1000);　// 整数の保存
+PlayerPrefs.SetFloat("Volume", 0.75f);　// 浮動小数点数の保存
+
+２.データの読み込み
+・ GetString(key)
+・ GetInt(key)
+・ GetFloat(key)
+例
+string playerName = PlayerPrefs.GetString("PlayerName");　// 文字列の読み込み
+int highScore = PlayerPrefs.GetInt("HighScore"); // 整数の読み込み
+float volume = PlayerPrefs.GetFloat("Volume"); // 浮動小数点数の読み込み
+
+３.データの削除
+PlayerPrefs.DeleteKey("PlayerName");　// 特定のキーを削除
+PlayerPrefs.DeleteAll();　// 全てのデータを削除

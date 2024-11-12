@@ -1,0 +1,5 @@
+CREATE TABLE id_table (
+    user_id INT UNSIGNED NOT NULL,
+    user_name VARCHAR(15) NOT NULL,
+    PRIMARY KEY (user_id)
+);

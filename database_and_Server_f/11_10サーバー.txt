@@ -1,0 +1,227 @@
+import pymysql
+from pymysql import MySQLError
+from http.server import BaseHTTPRequestHandler, HTTPServer
+import urllib.parse
+import sys
+import signal
+
+class MySQLConnection:
+    """MySQLデータベースへの接続を管理するクラス"""
+    def __init__(self):
+        self.connection = None
+        self.cursor = None
+
+    def connect(self):
+        """MySQLへの接続を確立"""
+        if not self.connection or not self.connection.open:
+            try:
+                self.connection = pymysql.connect(
+                    host="tokuron-mysql",  # MySQLコンテナのホスト名
+                    user="root",   # MySQLのユーザー名
+                    password="secret123",  # MySQLのパスワード
+                    database="my_database",  # 使用するデータベース名
+                    cursorclass=pymysql.cursors.DictCursor  # 結果を辞書形式で取得
+                )
+                if self.connection.open:
+                    self.cursor = self.connection.cursor()
+                    print("MySQL connection established")
+            except MySQLError as e:
+                print(f"Error while connecting to MySQL: {e}")
+
+    def close(self):
+        """MySQL接続を閉じる"""
+        if self.connection and self.connection.open:
+            self.cursor.close()
+            self.connection.close()
+            print("MySQL connection closed")
+
+class RequestHandler(BaseHTTPRequestHandler):
+    db_connection = MySQLConnection()  # サーバー起動時に一度接続する
+
+    def do_GET(self):
+        """GETリクエストを処理"""
+        path = self.path
+        query_params = urllib.parse.parse_qs(self.path.split('?')[1]) if '?' in self.path else {}
+
+        if path.startswith('/hello'):
+            self.hello()
+        elif path.startswith('/bye'):
+            # number1 と number2 をクエリパラメータとして取得
+            number1 = query_params.get('number1', [None])[0]
+            number2 = query_params.get('number2', [None])[0]
+            self.bye(number1, number2)
+        elif path.startswith('/add_id'):
+            # user_id と user_name を取得してMySQLに追加
+            user_id = query_params.get('user_id', [None])[0]
+            user_name = query_params.get('user_name', [None])[0]
+            self.add_id(user_id, user_name)
+        elif path.startswith('/check_user_exists'):
+            # user_id を取得して、ユーザーが存在するか確認
+            user_id = query_params.get('user_id', [None])[0]
+            self.check_user_exists(user_id)
+        elif path.startswith('/update_user_name'):
+            # user_id と user_name を取得して、MySQLのデータを更新
+            user_id = query_params.get('user_id', [None])[0]
+            user_name = query_params.get('user_name', [None])[0]
+            self.update_user_name(user_id, user_name)
+        else:
+            self.not_found()
+
+    def hello(self):
+        """/helloのリクエストに対してHello Worldを返す"""
+        self.send_response(200)
+        self.send_header('Content-type', 'text/html')
+        self.end_headers()
+        self.wfile.write(b'Hello World')
+
+    def add_id(self, user_id, user_name):
+        """/add_idのリクエストでMySQLにIDとユーザーネームを追加"""
+        if user_id is None or user_name is None:
+            self.send_response(400)  # Bad Request
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            self.wfile.write(b'Missing user_id or user_name parameter.')
+            return
+
+        try:
+            # データベースにuser_idとuser_nameを挿入
+            self.db_connection.cursor.callproc('ad_insert', (user_id, user_name))
+
+            # ストアドプロシージャの結果を取得
+            result = self.db_connection.cursor.fetchall()  # stored_results()ではなくfetchall()を使う
+
+            # ストアドプロシージャから成功メッセージが返ってきた場合
+            if result and result[0]['result'] == 'seikou!':
+                self.send_response(200)
+                self.send_header('Content-type', 'text/html')
+                self.end_headers()
+                self.wfile.write(f"ID {user_id} with name {user_name} added successfully.".encode())
+            else:
+                self.send_response(500)  # Internal Server Error
+                self.send_header('Content-type', 'text/html')
+                self.end_headers()
+                self.wfile.write(b'Error occurred while inserting into the database.')
+
+            # コミットして終了
+            self.db_connection.connection.commit()
+
+        except MySQLError as e:
+            # MySQLエラーが発生した場合（重複エラーなど）
+            error_message = str(e)
+
+            # 重複エラーの場合（ERROR 1062: Duplicate entry）
+            if "Duplicate entry" in error_message:
+                # 重複エラーなので 409 Conflict を返す
+                self.send_response(409)  # Conflict: 既にIDが存在している
+                self.send_header('Content-type', 'text/html')
+                self.end_headers()
+                self.wfile.write(b"User ID already exists.")  # ユーザーにわかりやすいメッセージを返す
+            else:
+                # その他のエラー
+                self.send_response(500)  # Internal Server Error
+                self.send_header('Content-type', 'text/html')
+                self.end_headers()
+                self.wfile.write(f"Error occurred: {error_message}".encode())
+
+    def check_user_exists(self, user_id):
+        """/check_user_existsのリクエストでMySQLのad_check関数を呼び出す"""
+        if user_id is None:
+            self.send_response(400)  # Bad Request
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            self.wfile.write(b'Missing user_id parameter.')
+            return
+
+        try:
+            # 関数を呼び出して結果を取得
+            self.db_connection.cursor.execute("SELECT ad_check(%s) AS result", (user_id,))
+            result = self.db_connection.cursor.fetchone()
+
+            # `result` は辞書形式で返されるので、キーでアクセス
+            if result and result['result'] == 'User found':
+                self.send_response(200)
+                self.send_header('Content-type', 'text/html')
+                self.end_headers()
+                self.wfile.write(b'User found. No action required.')
+            else:
+                self.send_response(404)  # Not Found
+                self.send_header('Content-type', 'text/html')
+                self.end_headers()
+                self.wfile.write(b'User not found.')
+
+        except MySQLError as e:
+            error_message = str(e)
+            self.send_response(500)
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            self.wfile.write(f"Error occurred: {error_message}".encode())
+
+    def update_user_name(self, user_id, user_name):
+        """`/update_user_name`のリクエストでMySQLのデータを更新"""
+        if user_id is None or user_name is None:
+            self.send_response(400)  # Bad Request
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            self.wfile.write(b'Missing user_id or user_name parameter.')
+            return
+
+        try:
+            # MySQLのUPDATE文を実行して、user_idに対応するuser_nameを更新
+            self.db_connection.cursor.execute(
+                "UPDATE id SET user_name = %s WHERE user_id = %s", (user_name, user_id)
+            )
+            updated_rows = self.db_connection.cursor.rowcount  # 更新された行数を確認
+
+            if updated_rows > 0:
+                # 更新が成功した場合
+                self.send_response(200)
+                self.send_header('Content-type', 'text/html')
+                self.end_headers()
+                self.wfile.write(f"User ID {user_id} name updated to {user_name}.".encode())
+            else:
+                # 更新されなかった場合（user_idが存在しないなど）
+                self.send_response(404)  # Not Found
+                self.send_header('Content-type', 'text/html')
+                self.end_headers()
+                self.wfile.write(b'User ID not found or no change made.')
+
+            # コミット
+            self.db_connection.connection.commit()
+
+        except MySQLError as e:
+            # MySQLエラーが発生した場合
+            error_message = str(e)
+            self.send_response(500)  # Internal Server Error
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            self.wfile.write(f"Error occurred: {error_message}".encode())
+
+    def not_found(self):
+        """/helloや/bye以外のリクエストに対して404を返す"""
+        self.send_response(404)
+        self.send_header('Content-type', 'text/html')
+        self.end_headers()
+        self.wfile.write(b'Not Found method')
+
+def run(server_class=HTTPServer, handler_class=RequestHandler, port=8080):
+    server_address = ('0.0.0.0', port)
+    httpd = server_class(server_address, handler_class)
+    print(f'Starting server on port {port}...')
+
+    # サーバー起動時にMySQLへの接続を一度行う
+    handler_class.db_connection.connect()
+
+    # サーバーの終了時にMySQL接続を閉じるための信号を設定
+    def handle_exit_signal(signal, frame):
+        print("Shutting down server...")
+        handler_class.db_connection.close()  # 接続を閉じる
+        httpd.server_close()  # サーバーを閉じる
+        sys.exit(0)
+
+    # Ctrl + C でサーバーを停止できるようにシグナルを処理
+    signal.signal(signal.SIGINT, handle_exit_signal)
+
+    httpd.serve_forever()
+
+if __name__ == '__main__':
+    run()

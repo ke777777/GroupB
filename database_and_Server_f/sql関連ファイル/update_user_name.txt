@@ -1,0 +1,17 @@
+DELIMITER $$
+
+CREATE PROCEDURE update_user_name(IN p_user_id INT UNSIGNED, IN p_user_name VARCHAR(15))
+BEGIN
+    -- user_id がテーブルに存在するか確認
+    IF EXISTS (SELECT 1 FROM id_table WHERE user_id = p_user_id) THEN
+        -- 存在すれば、user_name を更新
+        UPDATE id_table
+        SET user_name = p_user_name
+        WHERE user_id = p_user_id;
+    ELSE
+        -- 存在しなければ、エラーメッセージを表示（または他の処理）
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'User ID not found.';
+    END IF;
+END $$
+
+DELIMITER ;

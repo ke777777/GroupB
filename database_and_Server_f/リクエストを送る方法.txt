@@ -1,0 +1,52 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.Networking;
+using UnityEngine.UI;
+
+//引数持ちの場合は下記の形式でurlを作成する。
+//private const string ServerUrl = "http://localhost:8080"; // サーバーのURL
+//string url = $"{ServerUrl}/add_id?user_id={userId}&user_name={userName}";
+
+
+
+//下のプログラムはhelloを呼び出すリクエスト
+
+public class HttpClient : MonoBehaviour
+{
+    // テキストオブジェクトへの参照
+    public Text resultText;
+
+    // PythonサーバーのURL（Dockerのlocalhost:8080に対応）
+    private string serverUrl = "http://localhost:8080/hello";
+
+    // ゲーム開始時にリクエストを送る
+    void Start()
+    {
+        StartCoroutine(SendRequest());
+    }
+
+    // 非同期でGETリクエストを送信
+    IEnumerator SendRequest()
+    {
+        // UnityWebRequestを使ってGETリクエストを送信
+        using (UnityWebRequest webRequest = UnityWebRequest.Get(serverUrl))
+        {
+            // リクエストを送信してレスポンスを待機
+            yield return webRequest.SendWebRequest();
+
+            // リクエストにエラーがなければ
+            if (webRequest.result == UnityWebRequest.Result.Success)
+            {
+                // レスポンスをテキストオブジェクトに表示
+                resultText.text = webRequest.downloadHandler.text;
+            }
+            else
+            {
+                // エラーがあった場合
+                resultText.text = "Request failed: " + webRequest.error;
+            }
+        }
+    }
+}
+

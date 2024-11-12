@@ -1,0 +1,52 @@
+1.centos7イメージの作成
+(1)docker pull centos:centos7　　　　　　　　　　　　　　　　　//centosのイメージを作成、名前はcentos7
+(2)docker run -it --name="centos7f" centos:centos7 /bin/bash　 //centos7のイメージを使ってcentos7fコンテナを立てる
+　(2 ※1)docker start centos7f　　　　　　　　　　　　　　　　 //コンテナが動いてないなら、これで動かす
+　(2 ※2)docker exec -it centos7f /bin/bash　　　　　　　　　  //(2)コンテナに入っていない場合、これでコンテナの中に入る
+(3)vi /etc/yum.repos.d/CentOS-Base.repo　　　　　　　　　　　　//CentOS-Base.repoファイルを開く
+(4)mirrorlistをコメントアウトして、baseurlを指定する　　　　　 //iを押すとコメントモードになり書き込みが可能になる
+(5)ファイルから出る　　　　　　　　　　　　　　　　　　　　　　//Escボタンを押して:wqでファイルから出る
+(6)yum update                                                  //yumコマンドをupdateする
+(7)exitでコンテナから出る
+(8)docker commit centos7f centos:centos7　　　　　　　　　　　 //centos7イメージを更新
+(9)docker stop centos7f                                        //centos7fはもう使わないので停止
+(10)docker rm centos7f　　　　　　　　　　　　　　　　　　　　 //centos7fを削除　
+
+2.Mysqlイメージの作成(sql課題にかいてある感じでイメージを作成する)
+(1)docker image pull mysql:8.4
+(2)docker volume create tokuron
+(3)docker container run --name tokuron-mysql -v tokuron:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=secret123 -d mysql:8.4
+(4)docker exec -it tokuron-mysql bash
+(5)mysql -u root -p
+(6)secret123
+(7)SHOW DATABASES;
+(8)CREATE DATABASE my_database;
+(9)USE my_database;
+(10)mysql関係のファイルを実行(id_table.txtから順にファイルの内容をコマンドプロンプトに張り付ける)
+(11)exit;でmysqlを抜ける、exitでコンテナを抜ける
+
+3.サーバーを準備する
+(1)docker run -d --name centos-container -p 8080:8080 centos:centos7 sleep infinity　//centos7イメージを使ってcentos-containerコンテナを立てる
+(2)docker exec -it centos-container /bin/bash　　　　　　　　　　　　　　　　　　　　//コンテナの中に入る
+(3)yum update -y
+   yum install -y nano
+   yum install -y python3
+   pip3 install pymysql
+   python3 -m pip install --upgrade pip
+   pip3 install cryptography                                                           //いろいろダウンロード
+(4)nano hello_server.py　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　//hello_server.pyを開く
+(5)内容を書き込む
+(6)コントロールX→yで抜ける(yはコントロールじゃないよ)
+(7)コンテナを抜ける
+
+4.ネットワークを繋ぐ
+(1)docker network create tokuron-network
+(2)docker network connect tokuron-network centos-container
+   docker network connect tokuron-network tokuron-mysql
+
+5.実行
+(1)docker exec -it centos-container bash  //再度コンテナに入る
+(2)python3 hello_server.py                //サーバーを動かす
+
+
+

@@ -1,0 +1,21 @@
+table名がrankingの場合のデータベースのあれこれ
+
+DESCRIBE ranking;　//データのカラム情報の表示(型とか列名とか)
+INSERT INTO ranking (user_id, score) VALUES (1, 100);　//データの挿入
+INSERT INTO ranking (user_id, score) VALUES (2, 150);
+UPDATE ranking SET score = 200 WHERE user_id = 1;　//データの更新
+DELETE FROM ranking WHERE user_id = 2;　//データの削除
+SELECT * FROM ranking;　//実データの表示
+DROP TABLE id; //テーブルの削除
+SHOW FUNCTION STATUS WHERE Db = 'my_database';　//データベースの関数確認
+SHOW PROCEDURE STATUS WHERE Db = 'my_database'; //プロシージャの確認
+DROP FUNCTION IF EXISTS 関数名;　//関数の消し方
+DROP PROCEDURE IF EXISTS プロシージャ名; //ストアドプロシージャの消し方
+
+
+サーバー側からの呼び出し
+ストアドファンクション (Function):→データベースの変更をしてはいけない
+cursor.execute("SELECT ad_check(%s)", (user_id,))　//SQL文呼び出し
+
+ストアドプロシージャ (Procedure):→データベースの変更あり
+cursor.callproc('ad_insert', (user_id, user_name))　//プロシージャの呼び出し
