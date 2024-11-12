@@ -35,7 +35,7 @@
    python3 -m pip install --upgrade pip
    pip3 install cryptography                                                           //いろいろダウンロード
 (4)nano hello_server.py　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　//hello_server.pyを開く
-(5)内容を書き込む
+(5)内容を書き込む(11_10サーバー.txtを打ち込んで)
 (6)コントロールX→yで抜ける(yはコントロールじゃないよ)
 (7)コンテナを抜ける
 
