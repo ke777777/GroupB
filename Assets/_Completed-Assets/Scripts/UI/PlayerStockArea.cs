@@ -46,11 +46,11 @@ public class PlayerStockArea : MonoBehaviour
         float scaleWidth = screenWidth / baseResolution.x;
         float scaleHeight = screenHeight / baseResolution.y;
         float scale = Mathf.Min(scaleWidth, scaleHeight) * scaleFactor;
-        scale = Mathf.Max(scale, 0.93f); // 全体のスケール最小値
+       // scale = Mathf.Max(scale, 0.93f); // 全体のスケール最小値
         // 1発砲弾アイコンのサイズと間隔を調整
         if (shellGridLayout != null)
         {
-            shellGridLayout.cellSize = new Vector2(40, 60) * scale;
+            shellGridLayout.cellSize = new Vector2(30, 60) * scale;
             shellGridLayout.spacing = new Vector2(5, 5) * scale;
             shellGridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
             shellGridLayout.constraintCount = 10; // 1行に10個並べる
@@ -59,7 +59,7 @@ public class PlayerStockArea : MonoBehaviour
         // 10発砲弾アイコンのサイズと間隔を調整
         if (tenShellGridLayout != null)
         {
-            tenShellGridLayout.cellSize = new Vector2(40, 60) * scale;
+            tenShellGridLayout.cellSize = new Vector2(30, 60) * scale;
             tenShellGridLayout.spacing = new Vector2(5, 5) * scale;
             tenShellGridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
             tenShellGridLayout.constraintCount = 4; // 1行に4個並べる
