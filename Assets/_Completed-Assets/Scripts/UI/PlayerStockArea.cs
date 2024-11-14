@@ -7,6 +7,7 @@ public class PlayerStockArea : MonoBehaviour
     [SerializeField] private Image[] shellImages = new Image[4]; // 10発の砲弾アイコン
     [SerializeField] private Image[] mineImages = new Image[3];  // 地雷アイコン
 
+/*
     [SerializeField] private GridLayoutGroup shellGridLayout; // 1発砲弾アイコンのレイアウト調整用
     [SerializeField] private GridLayoutGroup tenShellGridLayout; // 10発砲弾アイコンのレイアウト調整用
     [SerializeField] private GridLayoutGroup mineGridLayout;  // 地雷アイコンのレイアウト調整用
@@ -15,7 +16,9 @@ public class PlayerStockArea : MonoBehaviour
     [SerializeField] private RectTransform stock1Area;
     [SerializeField] private RectTransform stock10Area;
     [SerializeField] private RectTransform mineArea;
-    private void Start()
+*/
+
+    /*private void Start()
     {
         AdjustLayout();
         AdjustIconSize();
@@ -28,7 +31,7 @@ public class PlayerStockArea : MonoBehaviour
     private void AdjustLayout()
     {
         // Stock1Areaを左寄せ
-        stock1Area.anchoredPosition = new Vector2(-500, 0);
+        stock1Area.anchoredPosition = new Vector2(-300, 0);
 
         // Stock10Areaを中央に配置
         stock10Area.anchoredPosition = new Vector2(0, 0);
@@ -36,7 +39,6 @@ public class PlayerStockArea : MonoBehaviour
         // MineAreaを右寄せ
         mineArea.anchoredPosition = new Vector2(300, 0);
     }
-    // 画面サイズに基づきアイコンのサイズと間隔を自動調整するメソッド
     private void AdjustIconSize()
     {
         float screenWidth = Screen.width;
@@ -73,7 +75,7 @@ public class PlayerStockArea : MonoBehaviour
             mineGridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
             mineGridLayout.constraintCount = 3; // 1行に3個並べる
         }
-    }
+    } */
 
     // 武器名とストック数に基づいてUIを更新
     public void UpdatePlayerStockArea(string weaponName, int currentStock)
