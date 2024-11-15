@@ -40,7 +40,7 @@ namespace Complete
         public delegate void OnWeaponStockChanged(string weaponName,int currentStock);   // 地雷の所持数が変化したことを通知するイベントを呼びだす
         public event OnWeaponStockChanged WeaponStockChanged;            // 地雷所持数の変化を通知
 
-        public delegate void OnMinePlaced();                         // 地雷設置されたことを通知するイベントを呼び出す
+        public delegate void OnMinePlaced();   // 地雷設置されたことを通知するイベントを呼び出す
         public event OnMinePlaced MinePlaced;
         private void OnEnable()
         {
@@ -58,7 +58,7 @@ namespace Complete
             // The rate that the launch force charges up is the range of possible forces by the max charge time.
             m_ChargeSpeed = (m_MaxLaunchForce - m_MinLaunchForce) / m_MaxChargeTime;
 
-            ShellStockChanged?.Invoke(currentcannonball); // 初期所持数（１０個）をイベントで通知
+            ShellStockChanged?.Invoke(currentcannonball);
             minePlaceButton = "PlaceMine" + m_PlayerNumber;
             WeaponStockChanged?.Invoke(mineStockData.CurrentMineNumber); // 初期地雷所持数を通知
         }*/
@@ -71,14 +71,14 @@ namespace Complete
             // 武器の初期化と辞書登録
             weaponStockDictionary = new Dictionary<string, WeaponStockData>
             {
-                { "Mine", mineStockData },
-                { "Shell", shellStockData }
+                { "Shell", shellStockData },
+                { "Mine", mineStockData }
             };
 
             // 各武器の初期所持数を設定
             foreach (var weapon in weaponStockDictionary)
             {
-                weapon.Value.InitializeWeaponnumber();
+                weapon.Value.InitializeWeaponNumber();
                 WeaponStockChanged?.Invoke(weapon.Key, weapon.Value.CurrentWeaponNumber); // 初期所持数を通知
             }
 
@@ -135,7 +135,16 @@ namespace Complete
             }
             if (Input.GetButtonDown(minePlaceButton))
             {
+                Debug.Log("Enter key pressed: PlaceMine button works!");
                 PlaceMine();
+            }
+            if (Input.GetKeyDown(KeyCode.Return))
+            {
+                Debug.Log("Enter key detected: KeyCode.Return");
+            }
+            if (Input.GetKeyDown(KeyCode.KeypadEnter))
+            {
+                Debug.Log("Keypad Enter key detected: KeyCode.KeypadEnter");
             }
         }
 
@@ -197,6 +206,7 @@ namespace Complete
             // 地雷の所持数が0以下の場合は設置できないようにする
             if (weaponStockDictionary["Mine"].CurrentWeaponNumber <= 0)
             {
+                Debug.Log("No mines available to place."); // 地雷がない場合
                 return;
             }
 

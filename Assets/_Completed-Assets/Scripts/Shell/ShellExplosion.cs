@@ -12,16 +12,30 @@ namespace Complete
         public float m_MaxLifeTime = 2f;                    // The time in seconds before the shell is removed.
         public float m_ExplosionRadius = 5f;                // The maximum distance away from the explosion tanks can be and are still affected.
 
+        public bool isMine = false; // 地雷かどうか
+        private bool isDamageActive = false;
 
         private void Start()
         {
+            // 地雷の場合のみクールタイムを設定
+            if (isMine == true)
+            {
+                Invoke(nameof(ActivateDamage),3.0f); // 3秒後にダメージを有効化
+            }
             // If it isn't destroyed by then, destroy the shell after it's lifetime.
             Destroy(gameObject, m_MaxLifeTime);
         }
-
-
+        private void ActivateDamage()
+        {
+            isDamageActive = true;
+        }
         private void OnTriggerEnter(Collider other)
         {
+            if (isMine && !isDamageActive)
+            {
+            return;
+            }
+
             // Collect all the colliders in a sphere from the shell's current position to a radius of the explosion radius.
             Collider[] colliders = Physics.OverlapSphere(transform.position, m_ExplosionRadius, m_TankMask);
 

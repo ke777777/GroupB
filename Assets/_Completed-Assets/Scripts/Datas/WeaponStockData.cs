@@ -18,7 +18,7 @@ using UnityEngine;
         this.gainWeaponNumber = gainWeaponNumber;
         this.currentWeaponNumber = initialWeaponNumber;
     }
-    public void InitializeWeaponnumber()
+    public void InitializeWeaponNumber()
     {
         currentWeaponNumber = initialWeaponNumber;
     }

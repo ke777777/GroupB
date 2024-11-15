@@ -76,8 +76,6 @@ public class PlayerStockArea : MonoBehaviour
             mineGridLayout.constraintCount = 3; // 1行に3個並べる
         }
     } */
-
-    // 武器名とストック数に基づいてUIを更新
     public void UpdatePlayerStockArea(string weaponName, int currentStock)
     {
         if (weaponName == "Shell")
