@@ -135,16 +135,7 @@ namespace Complete
             }
             if (Input.GetButtonDown(minePlaceButton))
             {
-                Debug.Log("Enter key pressed: PlaceMine button works!");
                 PlaceMine();
-            }
-            if (Input.GetKeyDown(KeyCode.Return))
-            {
-                Debug.Log("Enter key detected: KeyCode.Return");
-            }
-            if (Input.GetKeyDown(KeyCode.KeypadEnter))
-            {
-                Debug.Log("Keypad Enter key detected: KeyCode.KeypadEnter");
             }
         }
 
