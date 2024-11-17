@@ -7,7 +7,7 @@ public class Wormhole : MonoBehaviour
 {
     public Wormhole linkedGate; // 対応するゲート
     public float teleportDuration = 2f; // ワームホール通過時間
-    private float cooldownDuration = 4f; // ワープ後のクールダウン時間
+    private float cooldownDuration = 3f; // ワープ後のクールダウン時間
     private HashSet<TankMovement> cooldownTanks = new HashSet<TankMovement>(); // クールダウン中の戦車を追跡
 
     private void OnTriggerEnter(Collider other)
@@ -35,7 +35,7 @@ public class Wormhole : MonoBehaviour
 
         // タンクをクールダウンリストに追加
         cooldownTanks.Add(tank);
-        linkedGate.cooldownTanks.Add(tank); // 反対側でもクールダウンを設定
+        linkedGate.cooldownTanks.Add(tank);
 
         // タンクのコライダーを無効化
         Collider tankCollider = tank.GetComponent<Collider>();
@@ -94,11 +94,9 @@ public class Wormhole : MonoBehaviour
         tank.SetInvincible(false);
         tank.EnableActions();
 
-        // クールダウンの待機時間
         yield return new WaitForSeconds(cooldownDuration);
 
-        // タンクをクールダウンリストから削除
         cooldownTanks.Remove(tank);
-        linkedGate.cooldownTanks.Remove(tank); // 反対側でも削除
+        linkedGate.cooldownTanks.Remove(tank);
     }
 }

@@ -172,15 +172,17 @@ namespace Complete
             {
                 weaponStockDictionary["Shell"].GainingWeaponNunber();
                 WeaponStockChanged?.Invoke("Shell", weaponStockDictionary["Shell"].CurrentWeaponNumber);
+                Destroy(collision.gameObject);
             }
 
-            // 地雷カートリッジに衝突した場合
             if (collision.gameObject.CompareTag("MineCartridge"))
             {
                 weaponStockDictionary["Mine"].GainingWeaponNunber();
                 WeaponStockChanged?.Invoke("Mine", weaponStockDictionary["Mine"].CurrentWeaponNumber);
+                Destroy(collision.gameObject);
             }
         }
+
         private void PlaceMine()
         {
             // 地雷の所持数が0以下の場合は設置できないようにする

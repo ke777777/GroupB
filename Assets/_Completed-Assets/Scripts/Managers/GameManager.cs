@@ -22,7 +22,6 @@ namespace Complete
         private WaitForSeconds m_EndWait;           // Used to have a delay whilst the round or game ends.
         private TankManager m_RoundWinner;          // Reference to the winner of the current round.  Used to make an announcement of who won.
         private TankManager m_GameWinner;           // Reference to the winner of the game.  Used to make an announcement of who won.
-        private AudioSource audioSource;
         public enum GameState
         {
             RoundStarting,RoundPlaying,RoundEnding

@@ -20,10 +20,10 @@ namespace Complete
             }
 
             Vector3 randomPosition = new Vector3(
-                Random.Range(-10f, 10f), // X座標の範囲
+                Random.Range(-40f, 40f), // X座標の範囲
                 1f,                      // Y座標（固定）
-                Random.Range(-10f, 10f)  // Z座標の範囲
-            ) + data.spawnPosition; // spawnPositionをオフセットとして使用
+                Random.Range(-40f, 40f)  // Z座標の範囲
+            );
             Instantiate(data.cartridgePrefab, randomPosition, Quaternion.identity);
         }
 
@@ -51,14 +51,13 @@ namespace Complete
         {
             while (true)
             {
-                SpawnCartridge(data); // CartridgeDataを使用してCartridgeを生成
+                SpawnCartridge(data);
                 yield return new WaitForSeconds(data.spawnFrequency); // CartridgeDataから頻度を取得
             }
         }
 
         private void Start()
         {
-            // GameManagerオブジェクトを取得
             gameManager = FindObjectOfType<GameManager>();
             if (cartridgeData == null || cartridgeData.cartridgePrefab == null)
             {
