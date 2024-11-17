@@ -89,31 +89,21 @@ namespace Complete
         }
         private void Update()
         {
-            if (weaponStockDictionary["Shell"].CurrentWeaponNumber <= 0)
-            {
-                return;
-            }
-
-            // エイムスライダーの値を更新
             m_AimSlider.value = m_CurrentLaunchForce;
 
-            // 発射ボタンが押されたとき
-            if (Input.GetButtonDown(m_FireButton))
+            if (Input.GetButtonDown(m_FireButton )&& weaponStockDictionary["Shell"].CurrentWeaponNumber > 0)
             {
                 m_Fired = false;
                 m_CurrentLaunchForce = m_MinLaunchForce;
 
-                // チャージ音を再生
                 m_ShootingAudio.clip = m_ChargingClip;
                 m_ShootingAudio.Play();
             }
-            // 発射ボタンを押し続けている間
-            else if (Input.GetButton(m_FireButton) && !m_Fired)
+
+            else if (Input.GetButton(m_FireButton) && !m_Fired && weaponStockDictionary["Shell"].CurrentWeaponNumber > 0)
             {
-                // 発射力を増減させる
                 m_CurrentLaunchForce += m_ChargeSpeed * Time.deltaTime;
 
-                // 発射力が最大値または最小値に達したら、チャージ速度の符号を反転
                 if (m_CurrentLaunchForce >= m_MaxLaunchForce)
                 {
                     m_CurrentLaunchForce = m_MaxLaunchForce;
@@ -125,11 +115,10 @@ namespace Complete
                     m_ChargeSpeed = -m_ChargeSpeed; // 増加に転じる
                 }
 
-                // エイムスライダーの値を更新
                 m_AimSlider.value = m_CurrentLaunchForce;
             }
-            // 発射ボタンを離したとき
-            else if (Input.GetButtonUp(m_FireButton) && !m_Fired)
+
+            else if (Input.GetButtonUp(m_FireButton) && !m_Fired && weaponStockDictionary["Shell"].CurrentWeaponNumber > 0)
             {
                 Fire();
             }

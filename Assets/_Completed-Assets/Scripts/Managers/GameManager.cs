@@ -22,7 +22,7 @@ namespace Complete
         private WaitForSeconds m_EndWait;           // Used to have a delay whilst the round or game ends.
         private TankManager m_RoundWinner;          // Reference to the winner of the current round.  Used to make an announcement of who won.
         private TankManager m_GameWinner;           // Reference to the winner of the game.  Used to make an announcement of who won.
-
+        private AudioSource audioSource;
         public enum GameState
         {
             RoundStarting,RoundPlaying,RoundEnding
@@ -50,10 +50,13 @@ namespace Complete
             // For all the tanks...
             for (int i = 0; i < m_Tanks.Length; i++)
             {
-                // ... create them, set their player number and references needed for control.
-                m_Tanks[i].m_Instance =
-                    Instantiate(m_TankPrefab, m_Tanks[i].m_SpawnPoint.position, m_Tanks[i].m_SpawnPoint.rotation) as GameObject;
+                m_Tanks[i].m_Instance = Instantiate(m_TankPrefab,m_Tanks[i].m_SpawnPoint.position,m_Tanks[i].m_SpawnPoint.rotation) as GameObject;
                 m_Tanks[i].m_PlayerNumber = i + 1;
+                var tankHealth = m_Tanks[i].m_Instance.GetComponent<TankHealth>();
+                if (tankHealth != null)
+                {
+                    tankHealth.Initialize(m_Tanks[i].m_PlayerNumber); // ÉvÉåÉCÉÑÅ[î‘çÜÇê›íË
+                }
                 m_Tanks[i].Setup();
             }
         }
@@ -155,18 +158,35 @@ namespace Complete
             DisableTankControl ();
 
             // Clear the winner from the previous round.
-            m_RoundWinner = null;
+            // m_RoundWinner = null;
 
             // See if there is a winner now the round is over.
             m_RoundWinner = GetRoundWinner ();
-
-            // If there is a winner, increment their score.
             if (m_RoundWinner != null)
+            {
                 m_RoundWinner.m_Wins++;
+                Debug.Log($"{m_RoundWinner.m_ColoredPlayerText} wins this round! Total wins: {m_RoundWinner.m_Wins}");
+            }
+            else
+            {
+                Debug.Log("No winner this round (Draw).");
+            }
 
             // Now the winner's score has been incremented, see if someone has one the game.
-            m_GameWinner = GetGameWinner ();
+            m_GameWinner = GetGameWinner();
 
+            if (CountWins.Instance != null)
+            {
+                CountWins.Instance.UpdateWinStars();
+            }
+
+            if (m_GameWinner != null)
+            {
+                m_MessageText.text = $"{m_GameWinner.m_ColoredPlayerText} WINS THE GAME!";
+                yield return m_EndWait;
+                SceneManager.LoadScene(SceneNames.TitleScene);
+                yield break;
+            }
             // Get a message based on the scores and whether or not there is a game winner and display it.
             string message = EndMessage ();
             m_MessageText.text = message;

@@ -20,13 +20,12 @@ public class MiniMapFollowPlayer : MonoBehaviour
                 if (player.m_PlayerNumber == targetPlayerNumber)
                 {
                     playerTransform = player.transform;
-                    Debug.Log($"Player {targetPlayerNumber} found and assigned to MiniMap Camera.");
                     yield break;
                 }
             }
 
             Debug.LogWarning($"Player with number {targetPlayerNumber} not found. Retrying...");
-            yield return new WaitForSeconds(0.5f); // 0.5•b‘Ò‹@‚µ‚ÄÄs
+            yield return new WaitForSeconds(0.5f);
         }
     }
 
