@@ -168,7 +168,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         try:
             # MySQLのUPDATE文を実行して、user_idに対応するuser_nameを更新
             self.db_connection.cursor.execute(
-                "UPDATE id SET user_name = %s WHERE user_id = %s", (user_name, user_id)
+                "UPDATE id_table SET user_name = %s WHERE user_id = %s", (user_name, user_id)
             )
             updated_rows = self.db_connection.cursor.rowcount  # 更新された行数を確認
 
