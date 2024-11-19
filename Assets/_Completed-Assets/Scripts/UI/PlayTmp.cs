@@ -3,16 +3,17 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
-public class StartButton : MonoBehaviour
+public class Playtemp : MonoBehaviour
 {
-   [SerializeField]private Button startButton;
+   [SerializeField]private Button PlayButton;
 
     void Start()
     {
-        startButton.onClick.AddListener(OnClicked);
+        PlayButton.onClick.AddListener(OnClicked);
     }
     private void OnClicked()
     {
-        SceneManager.LoadScene(SceneNames.HomeScene);
+        SceneManager.LoadScene(SceneNames.CompleteGameScene);
     }
 }
+

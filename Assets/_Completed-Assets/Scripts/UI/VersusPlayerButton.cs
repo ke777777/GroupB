@@ -11,8 +11,8 @@ public class VersusPlayerButton : MonoBehaviour
     {
         versusPlayerButton.onClick.AddListener(OnClicked);
     }
- private void OnClicked()
+    private void OnClicked()
     {
-        SceneManager.LoadScene(SceneNames.CompleteGameScene);
+        SceneManager.LoadScene(SceneNames.LobbyScene);
     }
 }

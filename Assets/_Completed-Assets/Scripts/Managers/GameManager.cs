@@ -121,7 +121,7 @@ namespace Complete
             DisableTankControl ();
 
             // Snap the camera's zoom and position to something appropriate for the reset tanks.
-            m_CameraControl.SetStartPositionAndSize ();
+            m_CameraControl.Move ();
 
             // Increment the round number and display text showing the players what round it is.
             m_RoundNumber++;
