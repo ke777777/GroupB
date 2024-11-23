@@ -1,0 +1,172 @@
+DELIMITER $$
+
+CREATE PROCEDURE update_game_count(
+    IN p_user_id INT, 
+    IN p_column_name VARCHAR(10), 
+    OUT p_flag INT,
+    OUT p_top_10_ranking JSON
+)
+BEGIN
+    DECLARE v_n_win INT;
+    DECLARE v_n_loss INT;
+    DECLARE v_win_rate DECIMAL(5, 2);
+    DECLARE v_user_name VARCHAR(15);
+    DECLARE v_flag_value INT DEFAULT 0;
+    DECLARE v_current_rank INT;
+    DECLARE v_new_rank INT;
+    DECLARE v_existing_win_rate DECIMAL(5, 2);
+    DECLARE v_previous_user_rank INT;
+
+    DECLARE v_user_id INT;
+    DECLARE v_previous_win_rate DECIMAL(5, 2);
+    DECLARE done INT DEFAULT FALSE;
+
+    -- カーソルを宣言
+    DECLARE cur CURSOR FOR
+        SELECT user_id, win_rate
+        FROM ranking_table
+        ORDER BY win_rate DESC, user_id;  -- win_rateで降順、同じ場合はuser_idで安定化
+
+    -- ハンドラの設定: カーソルの終了条件
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+
+    -- id_tableからuser_nameを取得
+    SELECT user_name INTO v_user_name
+    FROM id_table
+    WHERE user_id = p_user_id;
+
+    -- 現在のユーザーの順位を取得
+    SELECT user_rank INTO v_current_rank
+    FROM ranking_table
+    WHERE user_id = p_user_id;
+
+    -- 'n_win' または 'n_loss' の場合、ゲーム結果を更新
+    IF p_column_name = 'n_win' THEN
+        UPDATE id_table
+        SET n_win = n_win + 1
+        WHERE user_id = p_user_id;
+    ELSEIF p_column_name = 'n_loss' THEN
+        UPDATE id_table
+        SET n_loss = n_loss + 1
+        WHERE user_id = p_user_id;
+    END IF;
+
+    -- 最新のn_winとn_lossを取得
+    SELECT n_win, n_loss INTO v_n_win, v_n_loss
+    FROM id_table
+    WHERE user_id = p_user_id;
+
+    -- n_winが10以上の場合のみ勝率を計算し、ランキングを更新
+    IF v_n_win >= 10 THEN
+        -- 勝率を計算
+        SET v_win_rate = v_n_win / (v_n_win + v_n_loss);
+
+        -- 同じuser_idがranking_tableにあるかチェック
+        SELECT win_rate INTO v_existing_win_rate
+        FROM ranking_table
+        WHERE user_id = p_user_id
+        LIMIT 1;
+
+        -- 同じuser_idが既に存在する場合、既存のレコードを更新
+        IF v_existing_win_rate IS NOT NULL THEN
+            UPDATE ranking_table
+            SET win_rate = v_win_rate, n_win = v_n_win, n_loss = v_n_loss
+            WHERE user_id = p_user_id;
+        ELSE
+            -- ranking_tableに新しいデータを挿入
+            INSERT INTO ranking_table (user_id, user_name, win_rate, n_win, n_loss, user_rank)
+            VALUES (p_user_id, v_user_name, v_win_rate, v_n_win, v_n_loss, 1);  -- 最初に1位として挿入
+        END IF;
+    END IF;
+
+    -- ranking_tableの順位を計算して更新
+    -- win_rateで降順に並べて順位を計算
+    SET @rank := 0;  -- ランキングの初期化
+    SET v_previous_win_rate := NULL;  -- 前回のwin_rateの初期化
+
+    -- カーソルを開く
+    OPEN cur;
+
+    -- ループ処理
+    read_loop: LOOP
+        FETCH cur INTO v_user_id, v_win_rate;
+
+        -- カーソルからデータを取得できたらループを終了
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
+
+        -- win_rateが前回と同じなら順位を維持、異なれば順位を上げる
+        IF v_win_rate = v_previous_win_rate THEN
+            -- 同じwin_rateの場合、順位は維持
+            SET @rank := @rank;  -- 順位変更なし
+        ELSE
+            -- 異なるwin_rateの場合、順位を1つ増やす
+            SET @rank := @rank + 1;
+        END IF;
+
+        -- ranking_tableの順位を更新
+        UPDATE ranking_table 
+        SET user_rank = @rank
+        WHERE user_id = v_user_id;
+
+        -- @previous_win_rateを更新
+        SET v_previous_win_rate = v_win_rate;
+
+    END LOOP;
+
+    -- カーソルを閉じる
+    CLOSE cur;
+
+    -- 一時テーブルに並べ替えた結果を保存
+    CREATE TEMPORARY TABLE temp_ranking_table AS
+    SELECT user_id, user_name, win_rate, n_win, n_loss, user_rank
+    FROM ranking_table
+    ORDER BY user_rank;
+
+    -- 既存のranking_tableを削除
+    DROP TABLE ranking_table;
+
+    -- 並べ替えた結果をranking_tableとして再作成
+    CREATE TABLE ranking_table AS
+    SELECT * FROM temp_ranking_table;
+
+    -- 一時テーブルを削除
+    DROP TEMPORARY TABLE temp_ranking_table;
+
+    -- ユーザーの新しい順位を取得
+    SELECT user_rank INTO v_new_rank
+    FROM ranking_table
+    WHERE user_id = p_user_id;
+
+    -- 自分より上に何人いるかを確認してフラッグを立てる
+    -- user_rankがNULLからNULL以外に変わった場合にもフラッグを立てる
+    SELECT user_rank INTO v_previous_user_rank
+    FROM ranking_table
+    WHERE user_id = p_user_id;
+
+    IF v_previous_user_rank IS NULL AND v_new_rank IS NOT NULL THEN
+        SET v_flag_value = 1; -- NULLからNULL以外に変わった場合にフラッグを立てる
+    ELSEIF v_new_rank < v_current_rank THEN
+        SET v_flag_value = 1; -- 順位が上がった場合にフラッグを立てる
+    END IF;
+
+    -- 勝率でランキングが更新された後、上位10件を取得
+    SELECT JSON_ARRAYAGG(
+            JSON_OBJECT(
+                'user_id', user_id,
+                'user_name', user_name,
+                'win_rate', win_rate,
+                'n_win', n_win,
+                'n_loss', n_loss
+            )
+        ) INTO p_top_10_ranking
+    FROM ranking_table
+    WHERE user_rank <= 10; -- 10件のみ取得
+
+    -- フラッグの値を返す
+    SET p_flag = v_flag_value;
+
+END $$
+
+DELIMITER ;
