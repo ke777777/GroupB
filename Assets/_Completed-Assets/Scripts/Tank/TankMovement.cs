@@ -1,4 +1,4 @@
-Ôªøusing UnityEngine;
+using UnityEngine;
 
 namespace Complete
 {
@@ -10,7 +10,11 @@ namespace Complete
         public float m_TurretTurnSpeed = 90f;       // How fast the turret rotates in degrees per second.
         public string m_TurretTurnAxisName;         // The name of the input axis for turret turning.
         public GameObject m_Turret;                  // Reference to the turret GameObject.
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> 885564796fbc270a44e49626c4c58979e1e81469
         public AudioSource m_MovementAudio;         // Reference to the audio source used to play engine sounds.
         public AudioClip m_EngineIdling;            // Audio to play when the tank isn't moving.
         public AudioClip m_EngineDriving;           // Audio to play when the tank is moving.
@@ -24,6 +28,10 @@ namespace Complete
         private float m_OriginalPitch;              // The pitch of the audio source at the start of the scene.
         private ParticleSystem[] m_particleSystems; // References to all the particles systems used by the Tanks
 
+        private bool isInvincible = false; // ÉèÅ[ÉÄÉzÅ[ÉãégópíÜÇÃñ≥ìGämîF
+        private bool canAct = true;
+        private Renderer[] renderers; // ì_ñ≈ÉGÉtÉFÉNÉgóp
+        public bool isCooldown = false; // ÉNÅ[ÉãÉ_ÉEÉìîªíË
         private void Awake ()
         {
             m_Rigidbody = GetComponent<Rigidbody> ();
@@ -65,6 +73,7 @@ namespace Complete
             m_TurretTurnAxisName = "TurretTurn" + m_PlayerNumber; // Assuming the turret turn axis is defined like this
 
             m_OriginalPitch = m_MovementAudio.pitch;
+            renderers = GetComponentsInChildren<Renderer>();
         }
 
 
@@ -74,6 +83,59 @@ namespace Complete
             m_TurnInputValue = Input.GetAxis (m_TurnAxisName);
 
             EngineAudio ();
+            if (!canAct) return; // çsìÆêßå¿íÜÇÕëÄçÏïsâ¬
+        }
+
+        public void SetInvincible(bool state)
+        {
+        isInvincible = state;
+        }
+        private void FixedUpdate ()
+        {
+            Move ();
+            Turn ();
+            TurretTurn(); // Call the turret rotation method
+        }
+
+        public void DisableActions()
+        {
+            canAct = false;
+        }
+
+        public void EnableActions()
+        {
+            canAct = true;
+        }
+
+        private void Move ()
+        {
+            Vector3 movement = transform.forward * m_MovementInputValue * m_Speed * Time.deltaTime;
+            m_Rigidbody.MovePosition(m_Rigidbody.position + movement);
+        }
+
+
+        private void Turn ()
+        {
+            float turn = m_TurnInputValue * m_TurnSpeed * Time.deltaTime;
+            Quaternion turnRotation = Quaternion.Euler (0f, turn, 0f);
+            m_Rigidbody.MoveRotation (m_Rigidbody.rotation * turnRotation);
+        }
+
+
+        private void TurretTurn ()
+        {
+            // Get the input for turret turning
+            float turretTurnInput = Input.GetAxis(m_TurretTurnAxisName);
+
+            // Calculate the rotation angle based on input and turret turn speed
+            float turretTurn = turretTurnInput * m_TurretTurnSpeed * Time.deltaTime;
+
+            // Update the turret's rotation on the Y axis
+            if (m_Turret != null) // Check if the turret reference is set
+            {
+                Quaternion turretTurnRotation = Quaternion.Euler(0f, turretTurn, 0f);
+                m_Turret.transform.rotation = m_Turret.transform.rotation * turretTurnRotation;
+            }
         }
 
 
@@ -138,5 +200,49 @@ namespace Complete
                 }
             }
         }
+<<<<<<< HEAD
     }
+=======
+        public void StartBlinking()
+        {
+            StartCoroutine(BlinkEffect());
+        }
+
+        public void StopBlinking()
+        {
+            StopAllCoroutines(); // ì_ñ≈ÉGÉtÉFÉNÉgÇí‚é~
+            SetVisible(true);
+        }
+
+        private System.Collections.IEnumerator BlinkEffect()
+        {
+            while (true)
+            {
+                SetVisible(false);
+                yield return new WaitForSeconds(0.1f);
+                SetVisible(true);
+                yield return new WaitForSeconds(0.1f);
+            }
+        }
+
+        private void SetVisible(bool isVisible)
+        {
+            foreach (var renderer in renderers)
+            {
+                renderer.enabled = isVisible;
+            }
+        }
+        public void StartCooldown(float duration)
+        {
+            StartCoroutine(CooldownCoroutine(duration));
+        }
+
+        private System.Collections.IEnumerator CooldownCoroutine(float duration)
+        {
+        isCooldown = true;
+        yield return new WaitForSeconds(duration);
+        isCooldown = false;
+    }
+    }
+>>>>>>> 885564796fbc270a44e49626c4c58979e1e81469
 }
