@@ -28,24 +28,36 @@ namespace Complete
         private IEnumerator WaitForTanksAndLinkHealth()
         {
             // タンクが生成されるのを待つ
-            while (gameManager.m_Tanks == null || gameManager.m_Tanks.Count == 0 || gameManager.m_Tanks[0].m_Instance == null)
+            while (gameManager == null || gameManager.m_Tanks == null || gameManager.m_Tanks.Count == 0)
             {
-                yield return null; // 次のフレームを待機
+                Debug.LogWarning("Waiting for GameManager and Tanks to be initialized...");
+                yield return new WaitForSeconds(0.5f); // 少し待機して再チェック
             }
 
+            // 各タンクのインスタンスが生成されるのを待つ
+            while (gameManager.m_Tanks.Exists(tank => tank.m_Instance == null))
+            {
+                Debug.LogWarning("Waiting for all Tank instances to be initialized...");
+                yield return new WaitForSeconds(0.5f);
+            }
+
+            // タンクの健康状態をリンク
             foreach (var tank in gameManager.m_Tanks)
             {
                 if (tank.m_Instance == null)
                 {
                     Debug.LogWarning($"Tank {tank.m_PlayerNumber} instance is null.");
-                    continue;
+                    continue; // タンクインスタンスがない場合はスキップ
                 }
 
                 var tankHealth = tank.m_Instance.GetComponent<TankHealth>();
                 if (tankHealth != null)
                 {
+                    // イベントをサブスクライブ
                     tankHealth.OnHealthChanged += HandleHealthChanged;
                     HandleHealthChanged(tankHealth.CurrentHealth, tankHealth.StartingHealth, tank.m_PlayerNumber);
+
+                    Debug.Log($"Linked TankHealth for Tank {tank.m_PlayerNumber}.");
                 }
                 else
                 {
@@ -53,6 +65,7 @@ namespace Complete
                 }
             }
         }
+
 
         private void HandleHealthChanged(float currentHealth, float maxHealth, int playerNumber)
         {

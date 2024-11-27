@@ -99,6 +99,7 @@ namespace Complete
                 Debug.LogError("Not connected to Photon");
                 return;
             }
+
             if (PhotonNetwork.IsMasterClient)
             {
                 foreach (Player player in PhotonNetwork.PlayerList)
@@ -115,6 +116,7 @@ namespace Complete
                             continue;
                         }
 
+                        // PlayerNumber を InstantiationData として渡す
                         object[] initData = new object[] { player.ActorNumber };
 
                         GameObject tank = PhotonNetwork.Instantiate("CompleteTank", spawnTransform.position, spawnTransform.rotation, 0, initData);
@@ -123,6 +125,8 @@ namespace Complete
                         {
                             m_Tanks[playerIndex].m_Instance = tank;
                             m_Tanks[playerIndex].Setup();
+
+                            // 他のクライアントにタンク生成データを同期
                             photonView.RPC(nameof(SyncTankSetup), RpcTarget.Others, player.ActorNumber, spawnTransform.position, spawnTransform.rotation);
                             Debug.Log($"Spawned Tank for Player {player.ActorNumber}");
                         }
@@ -140,30 +144,23 @@ namespace Complete
         }
 
         [PunRPC]
-        private void SyncTankSetup(int playerNumber, Vector3 position, Quaternion rotation)
+        private void SyncTankSetup(int playerNumber, Vector3 spawnPosition, Quaternion spawnRotation)
         {
-            int playerIndex = playerNumber - 1;
-
-            if (playerIndex >= 0 && playerIndex < m_Tanks.Count)
+            // 他クライアントでタンクの初期設定を行う
+            foreach (var tank in m_Tanks)
             {
-                if (m_Tanks[playerIndex].m_Instance == null)
+                if (tank.m_PlayerNumber == playerNumber)
                 {
-                    object[] initData = { playerNumber };
-                    GameObject tank = PhotonNetwork.Instantiate("CompleteTank", position, rotation, 0, initData);
-
-                    if (tank != null)
-                    {
-                        m_Tanks[playerIndex].m_Instance = tank;
-                        m_Tanks[playerIndex].Setup();
-                        Debug.Log($"同期されたプレイヤー {playerNumber} のタンクを設定しました。");
-                    }
+                    tank.m_Instance.transform.position = spawnPosition;
+                    tank.m_Instance.transform.rotation = spawnRotation;
+                    tank.Setup();
+                    Debug.Log($"Synchronized Tank Setup for Player {playerNumber}");
+                    return;
                 }
             }
-            else
-            {
-                Debug.LogError($"同期対象のプレイヤーインデックス {playerIndex} が範囲外です。");
-            }
+            Debug.LogError($"Failed to synchronize Tank Setup for Player {playerNumber}");
         }
+
         private IEnumerator FindAndAssignTanks()
         {
 

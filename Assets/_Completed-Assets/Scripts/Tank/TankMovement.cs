@@ -37,19 +37,30 @@ namespace Complete
         {
             m_Rigidbody = GetComponent<Rigidbody>();
             isMine = photonView.IsMine;
+
+            if (photonView.InstantiationData != null && photonView.InstantiationData.Length > 0)
+            {
+                m_PlayerNumber = (int)photonView.InstantiationData[0];
+                Debug.Log($"PlayerNumber for this tank is {m_PlayerNumber}");
+            }
+            else
+            {
+                Debug.LogError("m_PlayerNumber not set in InstantiationData");
+            }
+
             if (photonView.IsMine)
             {
-                if (photonView.InstantiationData != null && photonView.InstantiationData.Length > 0)
-                {
-                    m_PlayerNumber = (int)photonView.InstantiationData[0];
-                    Debug.Log($"PlayerNumber for this tank is {m_PlayerNumber}");
-                }
-                else
-                {
-                    Debug.LogError("m_PlayerNumber not set in InstantiationData");
-                }
+                // 自分が所有するタンクのみの初期化処理
+                InitializeLocalTank();
             }
         }
+
+        private void InitializeLocalTank()
+        {
+            // ローカルタンクの初期化処理（例: カメラ設定、UI初期化など）
+            Debug.Log($"Initializing local tank for Player {m_PlayerNumber}");
+        }
+
 
         private void OnEnable()
         {
