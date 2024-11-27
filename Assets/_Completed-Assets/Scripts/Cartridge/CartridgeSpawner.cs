@@ -34,12 +34,6 @@ namespace Complete
                 return;
             }
 
-            if (!customPool.ContainsPrefab(prefabName))
-            {
-                Debug.LogError($"Prefab with name '{prefabName}' not found in CustomPrefabPool.");
-                return;
-            }
-
             GameObject cartridge = PhotonNetwork.Instantiate(prefabName, randomPosition, Quaternion.identity);
             if (cartridge != null)
             {
