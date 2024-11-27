@@ -50,7 +50,6 @@ namespace Complete
         }
 
 
-
         private void OnEnable()
         {
             m_Rigidbody.isKinematic = false;

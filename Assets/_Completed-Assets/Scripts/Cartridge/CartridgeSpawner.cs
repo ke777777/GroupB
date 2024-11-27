@@ -2,7 +2,6 @@ using UnityEngine;
 using System.Collections;
 using Photon.Pun;
 
-
 namespace Complete
 {
     public class CartridgeSpawner : MonoBehaviour
@@ -10,7 +9,6 @@ namespace Complete
         [SerializeField] private CartridgeData cartridgeData;
         private GameManager gameManager;
         private Coroutine spawnCoroutine;
-
 
         public void SpawnCartridge(CartridgeData data)
         {
@@ -25,7 +23,12 @@ namespace Complete
                 1f,                      // Y座標（固定）
                 Random.Range(-40f, 40f)  // Z座標の範囲
             );
-            PhotonNetwork.Instantiate(data.cartridgePrefab.name, randomPosition, Quaternion.identity);
+
+            string prefabName = data.cartridgePrefab.name;
+
+            // PhotonNetwork.Instantiate に渡すプレハブ名を修正
+            PhotonNetwork.Instantiate(prefabName, randomPosition, Quaternion.identity);
+            Debug.Log($"Instantiated cartridge prefab '{prefabName}' at position {randomPosition}");
         }
 
         private void HandleGameStateChanged(GameManager.GameState newState)
