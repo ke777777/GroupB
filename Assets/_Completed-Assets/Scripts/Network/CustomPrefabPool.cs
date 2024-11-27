@@ -27,6 +27,7 @@ public class CustomPrefabPool : IPunPrefabPool
         {
             GameObject obj = Object.Instantiate(prefab, position, rotation);
             Debug.Log($"CustomPrefabPool instantiated '{prefabId}' at {position}, set inactive: {obj.activeSelf}");
+            obj.SetActive(false);
             return obj;
         }
 

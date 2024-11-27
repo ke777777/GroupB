@@ -61,20 +61,23 @@ namespace Complete
         }
         private void InitializeTanks()
         {
-            int playerCount = 2;
-            m_Tanks = new List<TankManager>(); // List<TankManager> ????
+            int playerCount = PhotonNetwork.PlayerList.Length;
+            m_Tanks = new List<TankManager>();
 
             for (int i = 0; i < playerCount; i++)
             {
-                TankManager tankManager = new TankManager();
-                tankManager.m_PlayerNumber = i + 1;
-                tankManager.m_PlayerColor = GetPlayerColor(i + 1);
-                tankManager.m_SpawnPoint = GetSpawnPoint(i + 1);
-                m_Tanks.Add(tankManager); // List ???
+                TankManager tankManager = new TankManager
+                {
+                    m_PlayerNumber = i + 1,
+                    m_PlayerColor = GetPlayerColor(i + 1),
+                    m_SpawnPoint = GetSpawnPoint(i + 1)
+                };
+                m_Tanks.Add(tankManager);
             }
 
             Debug.Log($"Initialized {playerCount} TankManagers.");
         }
+
         private Color GetPlayerColor(int playerNumber)
         {
             if (playerNumber == 1)
@@ -153,35 +156,28 @@ namespace Complete
                     if (photonView != null && photonView.InstantiationData != null && photonView.InstantiationData.Length > 0)
                     {
                         int playerNumber = (int)photonView.InstantiationData[0];
+                        int playerIndex = playerNumber - 1;
 
-                        // m_Tanks.Length ? m_Tanks.Count ???
-                        if (playerNumber - 1 >= 0 && playerNumber - 1 < m_Tanks.Count && m_Tanks[playerNumber - 1].m_Instance == null)
+                        if (playerIndex >= 0 && playerIndex < m_Tanks.Count && m_Tanks[playerIndex].m_Instance == null)
                         {
-                            m_Tanks[playerNumber - 1].m_Instance = tank;
-                            m_Tanks[playerNumber - 1].Setup();
+                            m_Tanks[playerIndex].m_Instance = tank;
+                            m_Tanks[playerIndex].Setup();
                             Debug.Log($"Assigned Tank to Player {playerNumber}");
                         }
                     }
                 }
 
-                bool allTanksAssigned = true;
-                foreach (var tankManager in m_Tanks)
+                if (m_Tanks.TrueForAll(t => t.m_Instance != null))
                 {
-                    if (tankManager.m_Instance == null)
-                    {
-                        allTanksAssigned = false;
-                        break;
-                    }
-                }
-
-                if (allTanksAssigned)
                     break;
+                }
 
                 yield return new WaitForSeconds(0.5f);
             }
 
             SetCameraTargets();
         }
+
 
 
 
