@@ -42,7 +42,6 @@ namespace Complete
             m_EndWait = new WaitForSeconds(m_EndDelay);
 
 
-            // ?????????????????????
             if (PhotonNetwork.InRoom)
             {
                 InitializeTanks();
@@ -51,14 +50,7 @@ namespace Complete
                 StartCoroutine(GameLoop());
             }
         }
-        public override void OnJoinedRoom()
-        {
-            Debug.Log("Joined Room");
-            InitializeTanks();
-            SpawnAllTanks();
-            StartCoroutine(FindAndAssignTanks());
-            StartCoroutine(GameLoop());
-        }
+
         private void InitializeTanks()
         {
             int playerCount = PhotonNetwork.PlayerList.Length;
@@ -107,41 +99,68 @@ namespace Complete
                 Debug.LogError("Not connected to Photon");
                 return;
             }
-
-            // ??????????????????????????????
-            foreach (Player player in PhotonNetwork.PlayerList)
+            if (PhotonNetwork.IsMasterClient)
             {
-                int playerIndex = player.ActorNumber - 1; // ActorNumber?1???
-
-                if (playerIndex >= 0 && playerIndex < m_Tanks.Count)
+                foreach (Player player in PhotonNetwork.PlayerList)
                 {
-                    Transform spawnTransform = m_Tanks[playerIndex].m_SpawnPoint;
+                    int playerIndex = player.ActorNumber - 1;
 
-                    if (spawnTransform == null)
+                    if (playerIndex >= 0 && playerIndex < m_Tanks.Count)
                     {
-                        Debug.LogError($"SpawnPoint for player {player.ActorNumber} is null.");
-                        continue;
+                        Transform spawnTransform = m_Tanks[playerIndex].m_SpawnPoint;
+
+                        if (spawnTransform == null)
+                        {
+                            Debug.LogError($"SpawnPoint for player {player.ActorNumber} is null.");
+                            continue;
+                        }
+
+                        object[] initData = new object[] { player.ActorNumber };
+
+                        GameObject tank = PhotonNetwork.Instantiate("CompleteTank", spawnTransform.position, spawnTransform.rotation, 0, initData);
+
+                        if (tank != null)
+                        {
+                            m_Tanks[playerIndex].m_Instance = tank;
+                            m_Tanks[playerIndex].Setup();
+                            photonView.RPC(nameof(SyncTankSetup), RpcTarget.Others, player.ActorNumber, spawnTransform.position, spawnTransform.rotation);
+                            Debug.Log($"Spawned Tank for Player {player.ActorNumber}");
+                        }
+                        else
+                        {
+                            Debug.LogError($"Failed to instantiate CompleteTank for player {player.ActorNumber}");
+                        }
                     }
+                    else
+                    {
+                        Debug.LogError($"PlayerIndex {playerIndex} is out of bounds. m_Tanks.Count = {m_Tanks.Count}");
+                    }
+                }
+            }
+        }
+        [PunRPC]
+        private void SyncTankSetup(int playerNumber, Vector3 position, Quaternion rotation)
+        {
+            int playerIndex = playerNumber - 1;
 
-                    object[] initData = new object[] { player.ActorNumber };
-
-                    GameObject tank = PhotonNetwork.Instantiate("CompleteTank", spawnTransform.position, spawnTransform.rotation, 0, initData);
+            if (playerIndex >= 0 && playerIndex < m_Tanks.Count)
+            {
+                if (m_Tanks[playerIndex].m_Instance == null)
+                {
+                    object[] initData = { playerNumber };
+                    GameObject tank = PhotonNetwork.Instantiate("CompleteTank", position, rotation, 0, initData);
 
                     if (tank != null)
                     {
                         m_Tanks[playerIndex].m_Instance = tank;
                         m_Tanks[playerIndex].Setup();
-                        Debug.Log($"Spawned Tank for Player {player.ActorNumber}");
-                    }
-                    else
-                    {
-                        Debug.LogError($"Failed to instantiate CompleteTank for player {player.ActorNumber}");
+                        Debug.Log($"同期されたプレイヤー {playerNumber} のタンクを設定しました。");
                     }
                 }
-                else
-                {
-                    Debug.LogError($"PlayerIndex {playerIndex} is out of bounds. m_Tanks.Count = {m_Tanks.Count}");
-                }
+            }
+            else
+            {
+                Debug.LogError($"同期対象のプレイヤーインデックス {playerIndex} が範囲外です。");
             }
         }
         private IEnumerator FindAndAssignTanks()
@@ -183,8 +202,7 @@ namespace Complete
 
         private void SetCameraTargets()
         {
-            Transform[] targets = new Transform[m_Tanks.Count]; // m_Tanks.Length ? m_Tanks.Count ???
-
+            Transform[] targets = new Transform[m_Tanks.Count];
             for (int i = 0; i < m_Tanks.Count; i++)
             {
                 if (m_Tanks[i].m_Instance != null)
