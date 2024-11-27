@@ -1,8 +1,8 @@
 ﻿using UnityEngine;
-
+using Photon.Pun;
 namespace Complete
 {
-    public class CameraControl : MonoBehaviour
+    public class CameraControl : MonoBehaviourPun
     {
         public float m_DampTime = 0.05f;                 // Approximate time for the camera to refocus.
         public float m_FollowDistance = 2f;             // The distance behind the target the camera should stay.
@@ -20,9 +20,12 @@ namespace Complete
 
         private void FixedUpdate()
         {
-            if (m_Targets.Length > 0 && m_Targets[0] != null)
+            if (photonView.IsMine) // 自分のタンクを追う
             {
-                Move();  // Move the camera towards the first target's position.
+                if (m_Targets.Length > 0 && m_Targets[0] != null)
+                {
+                    Move();  // Move the camera towards the first target's position.
+                }
             }
         }
 
@@ -50,8 +53,12 @@ namespace Complete
             }
         }
 
-
-
+        // カメラターゲットを自分のタンクに設定する関数
+        public void SetTarget(Transform target)
+        {
+            m_Targets = new Transform[1];  // 1つだけ設定
+            m_Targets[0] = target;  // 自分のタンクをターゲットとして設定
+        }
 
         /* public void SetStartPositionAndSize()
         {

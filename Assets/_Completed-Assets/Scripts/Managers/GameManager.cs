@@ -17,7 +17,7 @@ namespace Complete
         public Text m_MessageText;                  // Reference to the overlay Text to display winning text, etc.
         public GameObject m_TankPrefab;             // Reference to the prefab the players will control.
         // public TankManager[] m_Tanks;               // A collection of managers for enabling and disabling different aspects of the tanks.
-        public List<TankManager> m_Tanks; // ????????????????????
+        public List<TankManager> m_Tanks;
         [SerializeField] private GameObject minePrefab;
         [SerializeField] private GameObject completeShellPrefab;
         [SerializeField] private GameObject mineCartridgePrefab;
@@ -38,6 +38,13 @@ namespace Complete
 
         private void Start()
         {
+            m_CameraControl = FindObjectOfType<CameraControl>();
+            if (m_CameraControl == null)
+            {
+                Debug.LogError("CameraControl not found in the scene!");
+                return; // ƒJƒƒ‰‚ªŒ©‚Â‚©‚ç‚È‚¯‚ê‚Îˆ—‚ğ’†’f
+            }
+
             m_StartWait = new WaitForSeconds(m_StartDelay);
             m_EndWait = new WaitForSeconds(m_EndDelay);
 
