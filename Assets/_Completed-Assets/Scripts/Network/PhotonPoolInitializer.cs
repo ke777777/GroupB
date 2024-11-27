@@ -32,7 +32,5 @@ public class PhotonPoolInitializer : MonoBehaviour
                 Debug.LogWarning("PrefabEntry has null prefab or empty prefabName.");
             }
         }
-
-        Debug.Log("PhotonPoolInitializer has registered all prefabs.");
     }
 }
