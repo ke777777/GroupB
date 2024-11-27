@@ -27,14 +27,22 @@ public class MiniMapFollowPlayer : MonoBehaviour
     {
         while (!isPlayerFound)
         {
+            // シーン内のすべてのプレイヤーを取得
             Complete.TankMovement[] players = FindObjectsOfType<Complete.TankMovement>();
 
             foreach (Complete.TankMovement player in players)
             {
                 PhotonView photonView = player.GetComponent<PhotonView>();
 
+                // PhotonViewがnullでないか確認
+                if (photonView == null)
+                {
+                    Debug.LogWarning("Player does not have a PhotonView component.");
+                    continue;
+                }
+
                 // 自分のプレイヤーかどうか確認
-                if (photonView != null && photonView.IsMine)
+                if (photonView.IsMine)
                 {
                     playerTransform = player.transform;
                     isPlayerFound = true; // プレイヤーを見つけたらフラグを設定
@@ -47,5 +55,12 @@ public class MiniMapFollowPlayer : MonoBehaviour
             Debug.LogWarning("Local player not found. Retrying...");
             yield return new WaitForSeconds(retryInterval);
         }
+
+        // 再試行が終了してもプレイヤーが見つからなかった場合のフォールバック
+        if (!isPlayerFound)
+        {
+            Debug.LogError("Failed to find local player for MiniMap. Check player spawning and Photon setup.");
+        }
     }
+
 }

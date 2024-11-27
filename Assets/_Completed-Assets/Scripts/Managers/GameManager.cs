@@ -127,8 +127,6 @@ namespace Complete
                             m_Tanks[playerIndex].m_Instance = tank;
                             m_Tanks[playerIndex].Setup();
 
-                            // 他のクライアントにタンク生成データを同期
-                            photonView.RPC(nameof(SyncTankSetup), RpcTarget.Others, player.ActorNumber, spawnTransform.position, spawnTransform.rotation);
                             Debug.Log($"Spawned Tank for Player {player.ActorNumber}");
                         }
                         else
@@ -144,14 +142,21 @@ namespace Complete
             }
         }
 
+
         [PunRPC]
         private void SyncTankSetup(int playerNumber, Vector3 spawnPosition, Quaternion spawnRotation)
         {
-            // 他クライアントでタンクの初期設定を行う
             foreach (var tank in m_Tanks)
             {
                 if (tank.m_PlayerNumber == playerNumber)
                 {
+                    // インスタンスがまだ存在しない場合はエラーを出力
+                    if (tank.m_Instance == null)
+                    {
+                        Debug.LogError($"Tank instance for Player {playerNumber} is null. Cannot synchronize setup.");
+                        return;
+                    }
+
                     tank.m_Instance.transform.position = spawnPosition;
                     tank.m_Instance.transform.rotation = spawnRotation;
                     tank.Setup();
@@ -164,7 +169,6 @@ namespace Complete
 
         private IEnumerator FindAndAssignTanks()
         {
-
             // タンクのアサインが完了するまでループを続ける
             while (true)
             {
