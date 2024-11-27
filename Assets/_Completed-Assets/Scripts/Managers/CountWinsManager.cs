@@ -43,7 +43,7 @@ namespace Complete
         public void UpdateWinStars()
         {
 
-            if (gameManager == null || gameManager.m_Tanks.Length < 2)
+            if (gameManager == null || gameManager.m_Tanks.Count < 2)
             {
                 return;
             }

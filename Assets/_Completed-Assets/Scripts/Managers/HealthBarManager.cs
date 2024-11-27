@@ -16,7 +16,7 @@ namespace Complete
 
         private void OnEnable()
         {
-            if (gameManager == null || gameManager.m_Tanks == null || gameManager.m_Tanks.Length == 0)
+            if (gameManager == null || gameManager.m_Tanks == null || gameManager.m_Tanks.Count == 0)
             {
                 Debug.LogError("GameManager or tanks data is not properly initialized.");
                 return;
@@ -28,7 +28,7 @@ namespace Complete
         private IEnumerator WaitForTanksAndLinkHealth()
         {
             // タンクが生成されるのを待つ
-            while (gameManager.m_Tanks == null || gameManager.m_Tanks.Length == 0 || gameManager.m_Tanks[0].m_Instance == null)
+            while (gameManager.m_Tanks == null || gameManager.m_Tanks.Count == 0 || gameManager.m_Tanks[0].m_Instance == null)
             {
                 yield return null; // 次のフレームを待機
             }
