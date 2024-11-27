@@ -165,6 +165,7 @@ namespace Complete
         }
         private IEnumerator FindAndAssignTanks()
         {
+            // タンクのアサインが完了するまでループを続ける
             while (true)
             {
                 GameObject[] tanks = GameObject.FindGameObjectsWithTag("Player");
@@ -177,25 +178,40 @@ namespace Complete
                         int playerNumber = (int)photonView.InstantiationData[0];
                         int playerIndex = playerNumber - 1;
 
+                        // プレイヤー番号が有効で、まだインスタンスが割り当てられていない場合
                         if (playerIndex >= 0 && playerIndex < m_Tanks.Count && m_Tanks[playerIndex].m_Instance == null)
                         {
                             m_Tanks[playerIndex].m_Instance = tank;
                             m_Tanks[playerIndex].Setup();
                             Debug.Log($"Assigned Tank to Player {playerNumber}");
                         }
+                        else if (playerIndex < 0 || playerIndex >= m_Tanks.Count)
+                        {
+                            Debug.LogWarning($"Invalid player index: {playerIndex}. Ensure player numbers are correctly assigned.");
+                        }
+                    }
+                    else
+                    {
+                        Debug.LogWarning("Tank missing PhotonView or InstantiationData.");
                     }
                 }
 
+                // すべてのタンクにインスタンスが割り当てられた場合、ループを終了
                 if (m_Tanks.TrueForAll(t => t.m_Instance != null))
                 {
+                    Debug.Log("All tanks have been assigned successfully.");
                     break;
                 }
 
+                // デバッグログとリトライ間隔を追加
+                Debug.Log("Not all tanks are assigned. Retrying...");
                 yield return new WaitForSeconds(0.5f);
             }
 
+            // カメラターゲットの設定
             SetCameraTargets();
         }
+
 
 
 

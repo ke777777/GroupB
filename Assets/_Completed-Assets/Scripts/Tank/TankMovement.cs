@@ -37,18 +37,19 @@ namespace Complete
         {
             m_Rigidbody = GetComponent<Rigidbody>();
             isMine = photonView.IsMine;
-
-            if (photonView.InstantiationData != null && photonView.InstantiationData.Length > 0)
+            if (photonView.IsMine)
             {
-                m_PlayerNumber = (int)photonView.InstantiationData[0];
-                Debug.Log($"PlayerNumber for this tank is {m_PlayerNumber}");
-            }
-            else
-            {
-                Debug.LogError("m_PlayerNumber not set in InstantiationData");
+                if (photonView.InstantiationData != null && photonView.InstantiationData.Length > 0)
+                {
+                    m_PlayerNumber = (int)photonView.InstantiationData[0];
+                    Debug.Log($"PlayerNumber for this tank is {m_PlayerNumber}");
+                }
+                else
+                {
+                    Debug.LogError("m_PlayerNumber not set in InstantiationData");
+                }
             }
         }
-
 
         private void OnEnable()
         {
