@@ -24,24 +24,24 @@ namespace Complete
                 Random.Range(-40f, 40f)  // Z座標の範囲
             );
 
-            string prefabName = data.cartridgePrefab.name;
+            string prefabPath = $"Resources/{data.cartridgePrefab.name}"; // Resources内のパス
+            GameObject prefab = Resources.Load<GameObject>(data.cartridgePrefab.name);
 
-            // プレハブ名がCustomPrefabPoolに登録されているか確認
-            CustomPrefabPool customPool = PhotonNetwork.PrefabPool as CustomPrefabPool;
-            if (customPool == null)
+            if (prefab != null)
             {
-                Debug.LogError("PhotonNetwork.PrefabPool is not a CustomPrefabPool.");
-                return;
-            }
-
-            GameObject cartridge = PhotonNetwork.Instantiate(prefabName, randomPosition, Quaternion.identity);
-            if (cartridge != null)
-            {
-                Debug.Log($"Instantiated cartridge prefab '{prefabName}' at position {randomPosition}");
+                GameObject cartridge = PhotonNetwork.Instantiate(prefab.name, randomPosition, Quaternion.identity);
+                if (cartridge != null)
+                {
+                    Debug.Log($"Instantiated cartridge prefab '{prefab.name}' at position {randomPosition}");
+                }
+                else
+                {
+                    Debug.LogError($"Failed to instantiate cartridge prefab '{prefab.name}'");
+                }
             }
             else
             {
-                Debug.LogError($"Failed to instantiate cartridge prefab '{prefabName}'");
+                Debug.LogError($"Prefab '{data.cartridgePrefab.name}' not found in Resources.");
             }
         }
 
@@ -64,13 +64,12 @@ namespace Complete
             }
         }
 
-        // 定期的にSpawnCartridgeを呼び出すコルーチン
         private IEnumerator SpawnRoutine(CartridgeData data)
         {
             while (true)
             {
                 SpawnCartridge(data);
-                yield return new WaitForSeconds(data.spawnFrequency); // CartridgeDataから頻度を取得
+                yield return new WaitForSeconds(data.spawnFrequency);
             }
         }
 
