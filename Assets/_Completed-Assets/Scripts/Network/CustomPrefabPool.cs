@@ -40,4 +40,10 @@ public class CustomPrefabPool : IPunPrefabPool
     {
         Object.Destroy(gameObject);
     }
+
+    // プレハブが登録されているか確認するメソッド
+    public bool ContainsPrefab(string prefabName)
+    {
+        return prefabDictionary.ContainsKey(prefabName);
+    }
 }

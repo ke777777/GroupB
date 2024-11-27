@@ -26,9 +26,29 @@ namespace Complete
 
             string prefabName = data.cartridgePrefab.name;
 
-            // PhotonNetwork.Instantiate に渡すプレハブ名を修正
-            PhotonNetwork.Instantiate(prefabName, randomPosition, Quaternion.identity);
-            Debug.Log($"Instantiated cartridge prefab '{prefabName}' at position {randomPosition}");
+            // プレハブ名がCustomPrefabPoolに登録されているか確認
+            CustomPrefabPool customPool = PhotonNetwork.PrefabPool as CustomPrefabPool;
+            if (customPool == null)
+            {
+                Debug.LogError("PhotonNetwork.PrefabPool is not a CustomPrefabPool.");
+                return;
+            }
+
+            if (!customPool.ContainsPrefab(prefabName))
+            {
+                Debug.LogError($"Prefab with name '{prefabName}' not found in CustomPrefabPool.");
+                return;
+            }
+
+            GameObject cartridge = PhotonNetwork.Instantiate(prefabName, randomPosition, Quaternion.identity);
+            if (cartridge != null)
+            {
+                Debug.Log($"Instantiated cartridge prefab '{prefabName}' at position {randomPosition}");
+            }
+            else
+            {
+                Debug.LogError($"Failed to instantiate cartridge prefab '{prefabName}'");
+            }
         }
 
         private void HandleGameStateChanged(GameManager.GameState newState)
@@ -72,6 +92,10 @@ namespace Complete
             if (gameManager != null)
             {
                 gameManager.GameStateChanged += HandleGameStateChanged;
+            }
+            else
+            {
+                Debug.LogError("GameManagerが見つかりません。");
             }
         }
 

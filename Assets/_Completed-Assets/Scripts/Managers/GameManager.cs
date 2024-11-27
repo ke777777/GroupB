@@ -3,6 +3,8 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using Photon.Pun;
+using Photon.Realtime;
+using System.Collections.Generic;
 
 namespace Complete
 {
@@ -14,8 +16,8 @@ namespace Complete
         public CameraControl m_CameraControl;       // Reference to the CameraControl script for control during different phases.
         public Text m_MessageText;                  // Reference to the overlay Text to display winning text, etc.
         public GameObject m_TankPrefab;             // Reference to the prefab the players will control.
-        public TankManager[] m_Tanks;               // A collection of managers for enabling and disabling different aspects of the tanks.
-
+        // public TankManager[] m_Tanks;               // A collection of managers for enabling and disabling different aspects of the tanks.
+        public List<TankManager> m_Tanks; // ????????????????????
         [SerializeField] private GameObject minePrefab;
         [SerializeField] private GameObject completeShellPrefab;
         [SerializeField] private GameObject mineCartridgePrefab;
@@ -60,14 +62,15 @@ namespace Complete
         private void InitializeTanks()
         {
             int playerCount = 2;
-            m_Tanks = new TankManager[playerCount];
+            m_Tanks = new List<TankManager>(); // List<TankManager> ????
 
             for (int i = 0; i < playerCount; i++)
             {
-                m_Tanks[i] = new TankManager();
-                m_Tanks[i].m_PlayerNumber = i + 1;
-                m_Tanks[i].m_PlayerColor = GetPlayerColor(i + 1);
-                m_Tanks[i].m_SpawnPoint = GetSpawnPoint(i + 1);
+                TankManager tankManager = new TankManager();
+                tankManager.m_PlayerNumber = i + 1;
+                tankManager.m_PlayerColor = GetPlayerColor(i + 1);
+                tankManager.m_SpawnPoint = GetSpawnPoint(i + 1);
+                m_Tanks.Add(tankManager); // List ???
             }
 
             Debug.Log($"Initialized {playerCount} TankManagers.");
@@ -102,40 +105,40 @@ namespace Complete
                 return;
             }
 
-            // ???PlayerNumber???
-            int localPlayerNumber = PhotonNetwork.LocalPlayer.ActorNumber;
-            Debug.Log($"Local Player ActorNumber: {localPlayerNumber}");
-
-            // PlayerNumber?m_Tanks.Length??????????
-            if (localPlayerNumber - 1 < 0 || localPlayerNumber - 1 >= m_Tanks.Length)
+            // ??????????????????????????????
+            foreach (Player player in PhotonNetwork.PlayerList)
             {
-                Debug.LogError($"PlayerNumber {localPlayerNumber} is out of bounds. m_Tanks.Length = {m_Tanks.Length}");
-                return;
-            }
+                int playerIndex = player.ActorNumber - 1; // ActorNumber?1???
 
-            Transform spawnTransform = m_Tanks[localPlayerNumber - 1].m_SpawnPoint;
+                if (playerIndex >= 0 && playerIndex < m_Tanks.Count)
+                {
+                    Transform spawnTransform = m_Tanks[playerIndex].m_SpawnPoint;
 
-            if (spawnTransform == null)
-            {
-                Debug.LogError($"SpawnPoint for player {localPlayerNumber} is null.");
-                return;
-            }
+                    if (spawnTransform == null)
+                    {
+                        Debug.LogError($"SpawnPoint for player {player.ActorNumber} is null.");
+                        continue;
+                    }
 
-            object[] initData = new object[] { localPlayerNumber };
+                    object[] initData = new object[] { player.ActorNumber };
 
-            // PhotonNetwork.Instantiate?????
-            GameObject tank = PhotonNetwork.Instantiate("CompleteTank", spawnTransform.position, spawnTransform.rotation, 0, initData);
+                    GameObject tank = PhotonNetwork.Instantiate("CompleteTank", spawnTransform.position, spawnTransform.rotation, 0, initData);
 
-
-            if (tank != null)
-            {
-                m_Tanks[localPlayerNumber - 1].m_Instance = tank;
-                m_Tanks[localPlayerNumber - 1].Setup();
-                Debug.Log($"Spawned Tank for Player {localPlayerNumber}");
-            }
-            else
-            {
-                Debug.LogError($"Failed to instantiate TankPrefab for player {localPlayerNumber}");
+                    if (tank != null)
+                    {
+                        m_Tanks[playerIndex].m_Instance = tank;
+                        m_Tanks[playerIndex].Setup();
+                        Debug.Log($"Spawned Tank for Player {player.ActorNumber}");
+                    }
+                    else
+                    {
+                        Debug.LogError($"Failed to instantiate CompleteTank for player {player.ActorNumber}");
+                    }
+                }
+                else
+                {
+                    Debug.LogError($"PlayerIndex {playerIndex} is out of bounds. m_Tanks.Count = {m_Tanks.Count}");
+                }
             }
         }
         private IEnumerator FindAndAssignTanks()
@@ -151,7 +154,8 @@ namespace Complete
                     {
                         int playerNumber = (int)photonView.InstantiationData[0];
 
-                        if (playerNumber - 1 >= 0 && playerNumber - 1 < m_Tanks.Length && m_Tanks[playerNumber - 1].m_Instance == null)
+                        // m_Tanks.Length ? m_Tanks.Count ???
+                        if (playerNumber - 1 >= 0 && playerNumber - 1 < m_Tanks.Count && m_Tanks[playerNumber - 1].m_Instance == null)
                         {
                             m_Tanks[playerNumber - 1].m_Instance = tank;
                             m_Tanks[playerNumber - 1].Setup();
@@ -179,11 +183,13 @@ namespace Complete
             SetCameraTargets();
         }
 
+
+
         private void SetCameraTargets()
         {
-            Transform[] targets = new Transform[m_Tanks.Length];
+            Transform[] targets = new Transform[m_Tanks.Count]; // m_Tanks.Length ? m_Tanks.Count ???
 
-            for (int i = 0; i < m_Tanks.Length; i++)
+            for (int i = 0; i < m_Tanks.Count; i++)
             {
                 if (m_Tanks[i].m_Instance != null)
                 {
@@ -193,6 +199,7 @@ namespace Complete
 
             m_CameraControl.m_Targets = targets;
         }
+
 
         private void SetGameState(GameState newState)
         {
