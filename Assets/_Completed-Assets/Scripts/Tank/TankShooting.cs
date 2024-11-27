@@ -150,7 +150,7 @@ namespace Complete
             shellInstance.velocity = m_CurrentLaunchForce * m_FireTransform.forward;
             */
             object[] initData = new object[] { m_PlayerNumber };
-            Rigidbody shellInstance = PhotonNetwork.Instantiate("CompleteShellPrefab", m_FireTransform.position, m_FireTransform.rotation, 0, initData).GetComponent<Rigidbody>();
+            Rigidbody shellInstance = PhotonNetwork.Instantiate("CompleteShell", m_FireTransform.position, m_FireTransform.rotation, 0, initData).GetComponent<Rigidbody>();
 
             shellInstance.velocity = m_CurrentLaunchForce * m_FireTransform.forward;
             // Change the clip to the firing clip and play it.
