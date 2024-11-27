@@ -27,43 +27,58 @@ namespace Complete
 
         private IEnumerator WaitForTanksAndLinkHealth()
         {
-            // タンクが生成されるのを待つ
+            // GameManager の初期化待ち
             while (gameManager == null || gameManager.m_Tanks == null || gameManager.m_Tanks.Count == 0)
             {
-                Debug.LogWarning("Waiting for GameManager and Tanks to be initialized...");
-                yield return new WaitForSeconds(0.5f); // 少し待機して再チェック
+                Debug.Log("Waiting for GameManager and Tanks to be initialized...");
+                yield return new WaitForSeconds(0.5f); // 次のフレームまで待機
             }
 
-            // 各タンクのインスタンスが生成されるのを待つ
-            while (gameManager.m_Tanks.Exists(tank => tank.m_Instance == null))
+            // 各タンクのインスタンス生成待ち
+            bool allInstancesInitialized = false;
+            while (!allInstancesInitialized)
             {
-                Debug.LogWarning("Waiting for all Tank instances to be initialized...");
+                allInstancesInitialized = true;
+                foreach (var tank in gameManager.m_Tanks)
+                {
+                    if (tank.m_Instance == null)
+                    {
+                        Debug.Log($"Tank {tank.m_PlayerNumber} instance is not initialized yet. Retrying...");
+                        allInstancesInitialized = false;
+                        break;
+                    }
+                }
                 yield return new WaitForSeconds(0.5f);
             }
 
-            // タンクの健康状態をリンク
+            Debug.Log("All Tank instances have been initialized. Linking health...");
+
+            // 各タンクのヘルス状態をリンク
             foreach (var tank in gameManager.m_Tanks)
             {
                 if (tank.m_Instance == null)
                 {
-                    Debug.LogWarning($"Tank {tank.m_PlayerNumber} instance is null.");
-                    continue; // タンクインスタンスがない場合はスキップ
+                    Debug.LogError($"Tank {tank.m_PlayerNumber} instance is null. Skipping...");
+                    continue; // インスタンスが存在しない場合はスキップ
                 }
 
                 var tankHealth = tank.m_Instance.GetComponent<TankHealth>();
-                if (tankHealth != null)
+                if (tankHealth == null)
                 {
-                    // イベントをサブスクライブ
-                    tankHealth.OnHealthChanged += HandleHealthChanged;
-                    HandleHealthChanged(tankHealth.CurrentHealth, tankHealth.StartingHealth, tank.m_PlayerNumber);
+                    Debug.LogError($"TankHealth component not found on Tank {tank.m_PlayerNumber}. Skipping...");
+                    continue; // TankHealth コンポーネントが見つからない場合はスキップ
+                }
 
-                    Debug.Log($"Linked TankHealth for Tank {tank.m_PlayerNumber}.");
-                }
-                else
-                {
-                    Debug.LogWarning($"TankHealth component not found on Tank {tank.m_PlayerNumber}.");
-                }
+                // ヘルス変更イベントにサブスクライブ
+                tankHealth.OnHealthChanged += HandleHealthChanged;
+
+                // 初期状態を処理
+                HandleHealthChanged(tankHealth.CurrentHealth, tankHealth.StartingHealth, tank.m_PlayerNumber);
+
+                Debug.Log($"Linked health for Tank {tank.m_PlayerNumber}.");
             }
+
+            Debug.Log("Health linking completed for all Tanks.");
         }
 
 

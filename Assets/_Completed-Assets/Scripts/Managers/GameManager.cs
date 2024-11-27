@@ -100,6 +100,7 @@ namespace Complete
                 return;
             }
 
+            // MasterClient‚ªƒ^ƒ“ƒN‚ğ¶¬
             if (PhotonNetwork.IsMasterClient)
             {
                 foreach (Player player in PhotonNetwork.PlayerList)
@@ -116,7 +117,7 @@ namespace Complete
                             continue;
                         }
 
-                        // PlayerNumber ‚ğ InstantiationData ‚Æ‚µ‚Ä“n‚·
+                        // PlayerNumber‚ğInstantiationData‚Æ‚µ‚Ä“n‚·
                         object[] initData = new object[] { player.ActorNumber };
 
                         GameObject tank = PhotonNetwork.Instantiate("CompleteTank", spawnTransform.position, spawnTransform.rotation, 0, initData);
