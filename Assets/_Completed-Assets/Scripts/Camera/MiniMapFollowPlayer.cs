@@ -1,15 +1,15 @@
 using UnityEngine;
+using Photon.Pun;
 
 public class MiniMapFollowPlayer : MonoBehaviour
 {
-    public int targetPlayerNumber = 1; // 追跡するプレイヤーの番号
     private Transform playerTransform; // プレイヤーのTransform
     private bool isPlayerFound = false; // プレイヤーが見つかったかどうかのフラグ
     public float retryInterval = 0.5f; // プレイヤーを再検索する間隔
 
     private void Start()
     {
-        StartCoroutine(FindPlayer());
+        StartCoroutine(FindLocalPlayer());
     }
 
     private void Update()
@@ -23,7 +23,7 @@ public class MiniMapFollowPlayer : MonoBehaviour
         }
     }
 
-    private System.Collections.IEnumerator FindPlayer()
+    private System.Collections.IEnumerator FindLocalPlayer()
     {
         while (!isPlayerFound)
         {
@@ -31,21 +31,20 @@ public class MiniMapFollowPlayer : MonoBehaviour
 
             foreach (Complete.TankMovement player in players)
             {
-                if (player.m_PlayerNumber == targetPlayerNumber)
+                PhotonView photonView = player.GetComponent<PhotonView>();
+
+                // 自分のプレイヤーかどうか確認
+                if (photonView != null && photonView.IsMine)
                 {
                     playerTransform = player.transform;
                     isPlayerFound = true; // プレイヤーを見つけたらフラグを設定
-                    Debug.Log($"Player {targetPlayerNumber} found.");
+                    Debug.Log("Local player found for MiniMap.");
                     yield break;
-                }
-                else
-                {
-                    Debug.LogWarning($"Player number mismatch: Expected {targetPlayerNumber}, but found {player.m_PlayerNumber}");
                 }
             }
 
             // プレイヤーが見つからなかった場合、再試行
-            Debug.LogWarning($"Player with number {targetPlayerNumber} not found. Retrying...");
+            Debug.LogWarning("Local player not found. Retrying...");
             yield return new WaitForSeconds(retryInterval);
         }
     }

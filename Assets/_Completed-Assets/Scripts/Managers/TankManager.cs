@@ -1,6 +1,7 @@
 ﻿using System;
 using UnityEngine;
 using System.Collections;
+using Photon.Pun;
 
 namespace Complete
 {
@@ -29,6 +30,11 @@ namespace Complete
         public event OnWeaponStockChanged WeaponStockChanged;   // 砲弾所持数が変化したときのイベント
         public void Setup()
         {
+            if (m_Instance == null)
+            {
+                Debug.LogWarning("Tank instance is null in TankManager.Setup");
+                return;
+            }
             // Get references to the components.
             m_Movement = m_Instance.GetComponent<TankMovement>();
             m_Shooting = m_Instance.GetComponent<TankShooting>();
@@ -36,8 +42,12 @@ namespace Complete
             m_TurretTransform = m_Instance.transform.Find("TankRenderers/TankTurret"); // 砲塔のTransformを取得
 
             // Set the player numbers to be consistent across the scripts.
-            m_Movement.m_PlayerNumber = m_PlayerNumber;
-            m_Shooting.m_PlayerNumber = m_PlayerNumber;
+            if (m_Movement != null) m_Movement.m_PlayerNumber = m_PlayerNumber;
+            if (m_Shooting != null)
+            {
+                m_Shooting.Initialize(m_PlayerNumber); // TankShooting にプレイヤー番号を設定
+            }
+
 
             // Create a string using the correct color that says 'PLAYER 1' etc based on the tank's color and the player's number.
             m_ColoredPlayerText = "<color=#" + ColorUtility.ToHtmlStringRGB(m_PlayerColor) + ">PLAYER " + m_PlayerNumber + "</color>";
@@ -51,9 +61,11 @@ namespace Complete
             {
                 renderers[i].material.color = m_PlayerColor;
             }
-            m_Shooting.WeaponStockChanged += HandleWeaponStockChanged;
-
-            m_Shooting.MinePlaced += HandleMinePlaced;
+            if (m_Shooting != null)
+            {
+                m_Shooting.WeaponStockChanged += HandleWeaponStockChanged;
+                m_Shooting.MinePlaced += HandleMinePlaced;
+            }
         }
         private void HandleWeaponStockChanged(string weaponName, int currentStock)
         {
@@ -68,7 +80,11 @@ namespace Complete
         }
         private void HandleMinePlaced()
         {
-            m_Instance.GetComponent<MonoBehaviour>().StartCoroutine(TemporarilyStopMovement());
+            if (m_Instance == null || !m_Instance.GetComponent<PhotonView>().IsMine)
+                return;
+
+            MonoBehaviour behaviour = m_Instance.GetComponent<MonoBehaviour>();
+            behaviour?.StartCoroutine(TemporarilyStopMovement());
         }
         // Used during the phases of the game where the player shouldn't be able to control their tank.
         public void DisableControl()
@@ -78,11 +94,16 @@ namespace Complete
                 Debug.LogWarning("Tank instance is null in DisableControl");
                 return;
             }
-            m_Movement.enabled = false;
-            m_Shooting.enabled = false;
 
-            m_CanvasGameObject.SetActive(false);
+            PhotonView photonView = m_Instance.GetComponent<PhotonView>();
+            if (photonView != null && !photonView.IsMine)
+                return;
+
+            if (m_Movement != null) m_Movement.enabled = false;
+            if (m_Shooting != null) m_Shooting.enabled = false;
+            if (m_CanvasGameObject != null) m_CanvasGameObject.SetActive(false);
         }
+
 
 
         // Used during the phases of the game where the player should be able to control their tank.
@@ -93,11 +114,16 @@ namespace Complete
                 Debug.LogWarning("Tank instance is null in EnableControl");
                 return;
             }
-            m_Movement.enabled = true;
-            m_Shooting.enabled = true;
 
-            m_CanvasGameObject.SetActive(true);
+            PhotonView photonView = m_Instance.GetComponent<PhotonView>();
+            if (photonView != null && !photonView.IsMine)
+                return;
+
+            if (m_Movement != null) m_Movement.enabled = true;
+            if (m_Shooting != null) m_Shooting.enabled = true;
+            if (m_CanvasGameObject != null) m_CanvasGameObject.SetActive(true);
         }
+
 
 
         // Used at the start of each round to put the tank into it's default state.
@@ -109,10 +135,13 @@ namespace Complete
                 return;
             }
 
+            PhotonView photonView = m_Instance.GetComponent<PhotonView>();
+            if (photonView != null && !photonView.IsMine)
+                return;
+
             m_Instance.transform.position = m_SpawnPoint.position;
             m_Instance.transform.rotation = m_SpawnPoint.rotation;
 
-            // m_Instance.SetActive(false);
             m_Instance.SetActive(true);
         }
     }
