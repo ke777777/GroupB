@@ -160,7 +160,14 @@ public class NetworkManager : MonoBehaviourPunCallbacks
         ReceiveStamp(stampIndex, PhotonNetwork.NickName);
 
         // 他のプレイヤーにも送信
-        photonView.RPC("ReceiveStamp", RpcTarget.Others, stampIndex, PhotonNetwork.NickName);
+        if (PhotonNetwork.InRoom)
+        {
+            photonView.RPC("ReceiveStamp", RpcTarget.Others, stampIndex, PhotonNetwork.NickName);
+        }
+        else
+        {
+            Debug.LogWarning("Cannot send RPC. Player is not in a room.");
+        }
     }
 
     // スタンプ受信処理

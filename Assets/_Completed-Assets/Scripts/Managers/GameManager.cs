@@ -138,6 +138,7 @@ namespace Complete
                 }
             }
         }
+
         [PunRPC]
         private void SyncTankSetup(int playerNumber, Vector3 position, Quaternion rotation)
         {
@@ -165,6 +166,7 @@ namespace Complete
         }
         private IEnumerator FindAndAssignTanks()
         {
+
             // タンクのアサインが完了するまでループを続ける
             while (true)
             {

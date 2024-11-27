@@ -38,6 +38,10 @@ public class MiniMapFollowPlayer : MonoBehaviour
                     Debug.Log($"Player {targetPlayerNumber} found.");
                     yield break;
                 }
+                else
+                {
+                    Debug.LogWarning($"Player number mismatch: Expected {targetPlayerNumber}, but found {player.m_PlayerNumber}");
+                }
             }
 
             // プレイヤーが見つからなかった場合、再試行
