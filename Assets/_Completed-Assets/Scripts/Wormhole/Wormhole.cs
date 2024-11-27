@@ -2,13 +2,13 @@ using UnityEngine;
 using Complete;
 using System.Collections;
 using System.Collections.Generic;
-
-public class Wormhole : MonoBehaviour
+using Photon.Pun;
+public class Wormhole : MonoBehaviourPun
 {
     public Wormhole linkedGate; // 対応するゲート
     public float teleportDuration = 2f; // ワームホール通過時間
     private float cooldownDuration = 3f; // ワープ後のクールダウン時間
-    private HashSet<TankMovement> cooldownTanks = new HashSet<TankMovement>(); // クールダウン中の戦車を追跡
+    private HashSet<int> cooldownTanks = new HashSet<int>(); // クールダウン中の戦車を追跡
 
     private void OnTriggerEnter(Collider other)
     {
@@ -18,9 +18,10 @@ public class Wormhole : MonoBehaviour
         {
             TankMovement tank = other.GetComponent<TankMovement>();
 
-            if (tank != null && !cooldownTanks.Contains(tank))
+            if (tank != null && !cooldownTanks.Contains(tank.photonView.ViewID))
             {
-                StartCoroutine(TeleportTank(tank));
+                // StartCoroutine(TeleportTank(tank));
+                photonView.RPC("StartTeleport", RpcTarget.All, tank.photonView.ViewID);
             }
         }
         else if (other.CompareTag("Shell"))
@@ -29,13 +30,27 @@ public class Wormhole : MonoBehaviour
         }
     }
 
+    [PunRPC]
+    private void StartTeleport(int tankViewID)
+    {
+        var tankPhotonView = PhotonView.Find(tankViewID);
+        if (tankPhotonView != null)
+        {
+            TankMovement tank = tankPhotonView.GetComponent<TankMovement>();
+            if (tank != null && !cooldownTanks.Contains(tankViewID))
+            {
+                StartCoroutine(TeleportTank(tank));
+            }
+        }
+    }
+
     private IEnumerator TeleportTank(TankMovement tank)
     {
         if (tank == null) yield break;
 
         // タンクをクールダウンリストに追加
-        cooldownTanks.Add(tank);
-        linkedGate.cooldownTanks.Add(tank);
+        cooldownTanks.Add(tank.photonView.ViewID);
+        linkedGate.cooldownTanks.Add(tank.photonView.ViewID);
 
         // タンクのコライダーを無効化
         Collider tankCollider = tank.GetComponent<Collider>();
@@ -90,13 +105,13 @@ public class Wormhole : MonoBehaviour
         }
 
         // 無敵状態と行動制限を解除
-        tank.StopBlinking();
+        tank.RPC_StopBlinking();
         tank.SetInvincible(false);
         tank.EnableActions();
 
         yield return new WaitForSeconds(cooldownDuration);
 
-        cooldownTanks.Remove(tank);
-        linkedGate.cooldownTanks.Remove(tank);
+        cooldownTanks.Remove(tank.photonView.ViewID);
+        linkedGate.cooldownTanks.Remove(tank.photonView.ViewID);
     }
 }

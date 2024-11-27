@@ -2,11 +2,11 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
-
+using Photon.Pun;
 
 namespace Complete
 {
-    public class GameManager : MonoBehaviour
+    public class GameManager : MonoBehaviourPunCallbacks
     {
         public int m_NumRoundsToWin = 5;            // The number of rounds a single player has to win to win the game.
         public float m_StartDelay = 3f;             // The delay between the start of RoundStarting and RoundPlaying phases.
@@ -35,9 +35,17 @@ namespace Complete
             // Create the delays so they only have to be made once.
             m_StartWait = new WaitForSeconds(m_StartDelay);
             m_EndWait = new WaitForSeconds(m_EndDelay);
+            // Register the custom prefab pool
+            CustomPrefabPool customPrefabPool = new CustomPrefabPool();
+            PhotonNetwork.PrefabPool = customPrefabPool;
+
+            // Register the TankPrefab
+            customPrefabPool.RegisterPrefab("TankPrefab", m_TankPrefab);
 
             SpawnAllTanks();
-            SetCameraTargets();
+
+            // SetCameraTargets();
+            StartCoroutine(WaitForAllTanksAndSetCamera());
 
             // Once the tanks have been created and the camera is using them as targets, start the game.
             StartCoroutine(GameLoop());
@@ -49,17 +57,83 @@ namespace Complete
             // For all the tanks...
             for (int i = 0; i < m_Tanks.Length; i++)
             {
-                m_Tanks[i].m_Instance = Instantiate(m_TankPrefab, m_Tanks[i].m_SpawnPoint.position, m_Tanks[i].m_SpawnPoint.rotation) as GameObject;
+                /*m_Tanks[i].m_Instance = Instantiate(m_TankPrefab, m_Tanks[i].m_SpawnPoint.position, m_Tanks[i].m_SpawnPoint.rotation) as GameObject;
                 m_Tanks[i].m_PlayerNumber = i + 1;
                 var tankHealth = m_Tanks[i].m_Instance.GetComponent<TankHealth>();
                 if (tankHealth != null)
                 {
                     tankHealth.Initialize(m_Tanks[i].m_PlayerNumber); // ÉvÉåÉCÉÑÅ[î‘çÜÇê›íË
+                } */
+                if (PhotonNetwork.IsMasterClient)
+                {
+                    var spawnPos = m_Tanks[i].m_SpawnPoint.position;
+                    var spawnRot = m_Tanks[i].m_SpawnPoint.rotation;
+
+                    GameObject tank = PhotonNetwork.Instantiate("TankPrefab", spawnPos, spawnRot);
+                    if (tank != null)
+                    {
+                        m_Tanks[i].m_Instance = tank;
+                        m_Tanks[i].m_PlayerNumber = i + 1;
+
+                        m_Tanks[i].Setup();
+                    }
+                    else
+                    {
+                        Debug.LogError($"Failed to instantiate TankPrefab for player {i + 1}");
+                    }
                 }
-                m_Tanks[i].Setup();
+                else
+                {
+                    // ?????????????????????????
+                    StartCoroutine(FindAndAssignTankInstance(i));
+                }
             }
         }
 
+        private IEnumerator WaitForAllTanksAndSetCamera()
+        {
+            // ???????????????????????
+            bool allTanksAssigned = false;
+            while (!allTanksAssigned)
+            {
+                allTanksAssigned = true;
+                for (int i = 0; i < m_Tanks.Length; i++)
+                {
+                    if (m_Tanks[i].m_Instance == null)
+                    {
+                        allTanksAssigned = false;
+                        break;
+                    }
+                }
+                if (!allTanksAssigned)
+                {
+                    yield return new WaitForSeconds(0.1f);
+                }
+            }
+
+            // ?????????????????????????????????
+            SetCameraTargets();
+        }
+
+        private IEnumerator FindAndAssignTankInstance(int index)
+        {
+            while (m_Tanks[index].m_Instance == null)
+            {
+                GameObject[] tanks = GameObject.FindGameObjectsWithTag("Player");
+                foreach (GameObject tank in tanks)
+                {
+                    TankMovement movement = tank.GetComponent<TankMovement>();
+                    if (movement != null && movement.m_PlayerNumber == index + 1)
+                    {
+                        m_Tanks[index].m_Instance = tank;
+                        m_Tanks[index].m_PlayerNumber = index + 1;
+                        m_Tanks[index].Setup();
+                        yield break;
+                    }
+                }
+                yield return new WaitForSeconds(0.5f);
+            }
+        }
 
         private void SetCameraTargets()
         {
@@ -70,7 +144,14 @@ namespace Complete
             for (int i = 0; i < targets.Length; i++)
             {
                 // ... set it to the appropriate tank transform.
-                targets[i] = m_Tanks[i].m_TurretTransform;
+                if (m_Tanks[i].m_Instance != null)
+                {
+                    targets[i] = m_Tanks[i].m_Instance.transform;
+                }
+                else
+                {
+                    Debug.LogWarning($"Tank {i} instance is null in SetCameraTargets.");
+                }
             }
 
             // These are the targets the camera should follow.
@@ -85,6 +166,11 @@ namespace Complete
             CurrentGameState = newState;
 
             GameStateChanged?.Invoke(newState);
+
+            if (PhotonNetwork.IsMasterClient)
+            {
+                photonView.RPC(nameof(SetGameState), RpcTarget.Others, newState);
+            }
         }
         // This is called from start and will run each phase of the game one after another.
         private IEnumerator GameLoop()
@@ -102,7 +188,8 @@ namespace Complete
             if (m_GameWinner != null)
             {
                 // If there is a game winner, restart the level.
-                SceneManager.LoadScene(SceneNames.TitleScene);
+                // SceneManager.LoadScene(SceneNames.TitleScene);
+                PhotonNetwork.LoadLevel(SceneNames.TitleScene);
             }
             else
             {
@@ -164,7 +251,7 @@ namespace Complete
             if (m_RoundWinner != null)
             {
                 m_RoundWinner.m_Wins++;
-                Debug.Log($"{m_RoundWinner.m_ColoredPlayerText} wins this round! Total wins: {m_RoundWinner.m_Wins}");
+                // Debug.Log($"{m_RoundWinner.m_ColoredPlayerText} wins this round! Total wins: {m_RoundWinner.m_Wins}");
             }
             else
             {
@@ -174,7 +261,7 @@ namespace Complete
             // Now the winner's score has been incremented, see if someone has one the game.
             m_GameWinner = GetGameWinner();
 
-            if (CountWins.Instance != null)
+            /*if (CountWins.Instance != null)
             {
                 CountWins.Instance.UpdateWinStars();
             }
@@ -185,7 +272,8 @@ namespace Complete
                 yield return m_EndWait;
                 SceneManager.LoadScene(SceneNames.TitleScene);
                 yield break;
-            }
+            } */
+
             // Get a message based on the scores and whether or not there is a game winner and display it.
             string message = EndMessage();
             m_MessageText.text = message;
@@ -202,11 +290,19 @@ namespace Complete
             int numTanksLeft = 0;
 
             // Go through all the tanks...
-            for (int i = 0; i < m_Tanks.Length; i++)
+            /* for (int i = 0; i < m_Tanks.Length; i++)
             {
                 // ... and if they are active, increment the counter.
                 if (m_Tanks[i].m_Instance.activeSelf)
                     numTanksLeft++;
+            } */
+
+            foreach (var tank in m_Tanks)
+            {
+                if (tank.m_Instance.activeSelf)
+                {
+                    numTanksLeft++;
+                }
             }
 
             // If there are one or fewer tanks remaining return true, otherwise return false.
@@ -218,11 +314,19 @@ namespace Complete
         private TankManager GetRoundWinner()
         {
             // Go through all the tanks...
-            for (int i = 0; i < m_Tanks.Length; i++)
+            /* for (int i = 0; i < m_Tanks.Length; i++)
             {
                 // ... and if one of them is active, it is the winner so return it.
                 if (m_Tanks[i].m_Instance.activeSelf)
                     return m_Tanks[i];
+            } */
+
+            foreach (var tank in m_Tanks)
+            {
+                if (tank.m_Instance.activeSelf)
+                {
+                    return tank;
+                }
             }
 
             // If none of the tanks are active it is a draw so return null.
@@ -234,11 +338,19 @@ namespace Complete
         private TankManager GetGameWinner()
         {
             // Go through all the tanks...
-            for (int i = 0; i < m_Tanks.Length; i++)
+            /* for (int i = 0; i < m_Tanks.Length; i++)
             {
                 // ... and if one of them has enough rounds to win the game, return it.
                 if (m_Tanks[i].m_Wins == m_NumRoundsToWin)
                     return m_Tanks[i];
+            } */
+
+            foreach (var tank in m_Tanks)
+            {
+                if (tank.m_Wins == m_NumRoundsToWin)
+                {
+                    return tank;
+                }
             }
 
             // If no tanks have enough rounds to win, return null.
@@ -260,11 +372,15 @@ namespace Complete
             message += "\n\n\n\n";
 
             // Go through all the tanks and add each of their scores to the message.
-            for (int i = 0; i < m_Tanks.Length; i++)
+            /* for (int i = 0; i < m_Tanks.Length; i++)
             {
                 message += m_Tanks[i].m_ColoredPlayerText + ": " + m_Tanks[i].m_Wins + " WINS\n";
-            }
+            } */
 
+            foreach (var tank in m_Tanks)
+            {
+                message += tank.m_ColoredPlayerText + ": " + tank.m_Wins + " WINS\n";
+            }
             // If there is a game winner, change the entire message to reflect that.
             if (m_GameWinner != null)
                 message = m_GameWinner.m_ColoredPlayerText + " WINS THE GAME!";
@@ -276,27 +392,42 @@ namespace Complete
         // This function is used to turn all the tanks back on and reset their positions and properties.
         private void ResetAllTanks()
         {
-            for (int i = 0; i < m_Tanks.Length; i++)
+            /* for (int i = 0; i < m_Tanks.Length; i++)
             {
                 m_Tanks[i].Reset();
+            } */
+
+            foreach (var tank in m_Tanks)
+            {
+                tank.Reset();
             }
         }
 
 
         private void EnableTankControl()
         {
-            for (int i = 0; i < m_Tanks.Length; i++)
+            /* for (int i = 0; i < m_Tanks.Length; i++)
             {
                 m_Tanks[i].EnableControl();
+            } */
+
+            foreach (var tank in m_Tanks)
+            {
+                tank.EnableControl();
             }
         }
 
 
         private void DisableTankControl()
         {
-            for (int i = 0; i < m_Tanks.Length; i++)
+            /* for (int i = 0; i < m_Tanks.Length; i++)
             {
                 m_Tanks[i].DisableControl();
+            } */
+
+            foreach (var tank in m_Tanks)
+            {
+                tank.DisableControl();
             }
         }
     }

@@ -1,9 +1,10 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
+using Photon.Pun;
 namespace Complete
 {
-    public class TankShooting : MonoBehaviour
+    public class TankShooting : MonoBehaviourPun
     {
         public int m_PlayerNumber = 1;              // Used to identify the different players.
         public Rigidbody m_Shell;                   // Prefab of the shell.
@@ -16,11 +17,13 @@ namespace Complete
         public float m_MaxLaunchForce = 30f;        // The force given to the shell if the fire button is held for the max charge time.
         public float m_MaxChargeTime = 0.75f;       // How long the shell can charge for before it is fired at max force.
 
+        /*
         public int initcannonball = 10; //初期の砲弾数
         public int currentcannonball; //現在の砲弾数
         public int maxCannonball = 50; //砲弾数の最大値
         public int replenishCannonball = 10; // 補充時に追加される砲弾数
         public bool isCharge; //飛距離ゲージのbool変数
+        */
 
         private string m_FireButton;                // The input axis that is used for launching shells.
         private float m_CurrentLaunchForce;         // The force that will be given to the shell when the fire button is released.
@@ -37,7 +40,7 @@ namespace Complete
 
         [SerializeField] private GameObject minePrefab;
         private string minePlaceButton;
-        public delegate void OnWeaponStockChanged(string weaponName,int currentStock);   // 地雷の所持数が変化したことを通知するイベントを呼びだす
+        public delegate void OnWeaponStockChanged(string weaponName, int currentStock);   // 地雷の所持数が変化したことを通知するイベントを呼びだす
         public event OnWeaponStockChanged WeaponStockChanged;            // 地雷所持数の変化を通知
 
         public delegate void OnMinePlaced();   // 地雷設置されたことを通知するイベントを呼び出す
@@ -91,7 +94,7 @@ namespace Complete
         {
             m_AimSlider.value = m_CurrentLaunchForce;
 
-            if (Input.GetButtonDown(m_FireButton )&& weaponStockDictionary["Shell"].CurrentWeaponNumber > 0)
+            if (Input.GetButtonDown(m_FireButton) && weaponStockDictionary["Shell"].CurrentWeaponNumber > 0)
             {
                 m_Fired = false;
                 m_CurrentLaunchForce = m_MinLaunchForce;
@@ -129,7 +132,7 @@ namespace Complete
         }
 
 
-        private void Fire ()
+        private void Fire()
         {
             // Set the fired flag so only Fire is only called once.
             m_Fired = true;
@@ -139,18 +142,18 @@ namespace Complete
 
             // Create an instance of the shell and store a reference to it's rigidbody.
             Rigidbody shellInstance =
-                Instantiate (m_Shell, m_FireTransform.position, m_FireTransform.rotation) as Rigidbody;
+                Instantiate(m_Shell, m_FireTransform.position, m_FireTransform.rotation) as Rigidbody;
 
             // Set the shell's velocity to the launch force in the fire position's forward direction.
-            shellInstance.velocity = m_CurrentLaunchForce * m_FireTransform.forward; 
+            shellInstance.velocity = m_CurrentLaunchForce * m_FireTransform.forward;
 
             // Change the clip to the firing clip and play it.
             m_ShootingAudio.clip = m_FireClip;
-            m_ShootingAudio.Play ();
+            m_ShootingAudio.Play();
 
             // Reset the launch force.  This is a precaution in case of missing button events.
             m_CurrentLaunchForce = m_MinLaunchForce;
-             // Reset the fired flag so the tank can fire again.
+            // Reset the fired flag so the tank can fire again.
             m_Fired = false;
         }
 

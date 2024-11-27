@@ -4,7 +4,7 @@ public class MiniMapFollowPlayer : MonoBehaviour
 {
     public int targetPlayerNumber = 1; // 追跡するプレイヤーの番号
     private Transform playerTransform;
-
+    private bool isPlayerFound = false; // プレイヤーが見つかったかどうか
     private void Start()
     {
         StartCoroutine(FindPlayer());
@@ -28,6 +28,7 @@ public class MiniMapFollowPlayer : MonoBehaviour
             yield return new WaitForSeconds(0.5f);
         }
     }
+
 
     private void LateUpdate()
     {

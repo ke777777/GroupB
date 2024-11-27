@@ -4,7 +4,8 @@ using System.Collections;
 
 namespace Complete
 {
-    [Serializable] public class TankManager
+    [Serializable]
+    public class TankManager
     {
         // This class is to manage various settings on a tank.
         // It works with the GameManager class to control how the tanks behave
@@ -26,12 +27,12 @@ namespace Complete
 
         public delegate void OnWeaponStockChanged(int playerNumber, string weaponName, int currentStock);
         public event OnWeaponStockChanged WeaponStockChanged;   // 砲弾所持数が変化したときのイベント
-        public void Setup ()
+        public void Setup()
         {
             // Get references to the components.
-            m_Movement = m_Instance.GetComponent<TankMovement> ();
-            m_Shooting = m_Instance.GetComponent<TankShooting> ();
-            m_CanvasGameObject = m_Instance.GetComponentInChildren<Canvas> ().gameObject;
+            m_Movement = m_Instance.GetComponent<TankMovement>();
+            m_Shooting = m_Instance.GetComponent<TankShooting>();
+            m_CanvasGameObject = m_Instance.GetComponentInChildren<Canvas>().gameObject;
             m_TurretTransform = m_Instance.transform.Find("TankRenderers/TankTurret"); // 砲塔のTransformを取得
 
             // Set the player numbers to be consistent across the scripts.
@@ -42,7 +43,7 @@ namespace Complete
             m_ColoredPlayerText = "<color=#" + ColorUtility.ToHtmlStringRGB(m_PlayerColor) + ">PLAYER " + m_PlayerNumber + "</color>";
 
             // Get all of the renderers of the tank.
-            MeshRenderer[] renderers = m_Instance.GetComponentsInChildren<MeshRenderer> ();
+            MeshRenderer[] renderers = m_Instance.GetComponentsInChildren<MeshRenderer>();
 
             // Go through all the renderers...
             for (int i = 0; i < renderers.Length; i++)
@@ -54,7 +55,7 @@ namespace Complete
 
             m_Shooting.MinePlaced += HandleMinePlaced;
         }
-         private void HandleWeaponStockChanged(string weaponName, int currentStock)
+        private void HandleWeaponStockChanged(string weaponName, int currentStock)
         {
             WeaponStockChanged?.Invoke(m_PlayerNumber, weaponName, currentStock); //プレイヤー番号と砲弾の所持数の通知を行う
         }
@@ -70,33 +71,49 @@ namespace Complete
             m_Instance.GetComponent<MonoBehaviour>().StartCoroutine(TemporarilyStopMovement());
         }
         // Used during the phases of the game where the player shouldn't be able to control their tank.
-        public void DisableControl ()
+        public void DisableControl()
         {
+            if (m_Instance == null)
+            {
+                Debug.LogWarning("Tank instance is null in DisableControl");
+                return;
+            }
             m_Movement.enabled = false;
             m_Shooting.enabled = false;
 
-            m_CanvasGameObject.SetActive (false);
+            m_CanvasGameObject.SetActive(false);
         }
 
 
         // Used during the phases of the game where the player should be able to control their tank.
-        public void EnableControl ()
+        public void EnableControl()
         {
+            if (m_Instance == null)
+            {
+                Debug.LogWarning("Tank instance is null in EnableControl");
+                return;
+            }
             m_Movement.enabled = true;
             m_Shooting.enabled = true;
 
-            m_CanvasGameObject.SetActive (true);
+            m_CanvasGameObject.SetActive(true);
         }
 
 
         // Used at the start of each round to put the tank into it's default state.
-        public void Reset ()
+        public void Reset()
         {
+            if (m_Instance == null)
+            {
+                Debug.LogWarning("Tank instance is null in TankManager.Reset");
+                return;
+            }
+
             m_Instance.transform.position = m_SpawnPoint.position;
             m_Instance.transform.rotation = m_SpawnPoint.rotation;
 
-            m_Instance.SetActive (false);
-            m_Instance.SetActive (true);
+            m_Instance.SetActive(false);
+            m_Instance.SetActive(true);
         }
     }
 }

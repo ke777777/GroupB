@@ -1,8 +1,9 @@
 using UnityEngine;
+using Photon.Pun;
 
 namespace Complete
 {
-    public class TankMovement : MonoBehaviour
+    public class TankMovement : MonoBehaviourPun, IPunObservable
     {
         public int m_PlayerNumber = 1;              // Used to identify which tank belongs to which player.  This is set by this tank's manager.
         public float m_Speed = 12f;                 // How fast the tank moves forward and back.
@@ -14,7 +15,7 @@ namespace Complete
         public AudioSource m_MovementAudio;         // Reference to the audio source used to play engine sounds.
         public AudioClip m_EngineIdling;            // Audio to play when the tank isn't moving.
         public AudioClip m_EngineDriving;           // Audio to play when the tank is moving.
-		public float m_PitchRange = 0.2f;           // The amount by which the pitch of the engine noises can vary.
+        public float m_PitchRange = 0.2f;           // The amount by which the pitch of the engine noises can vary.
 
         private string m_MovementAxisName;          // The name of the input axis for moving forward and back.
         private string m_TurnAxisName;              // The name of the input axis for turning.
@@ -22,19 +23,23 @@ namespace Complete
         private float m_MovementInputValue;         // The current value of the movement input.
         private float m_TurnInputValue;             // The current value of the turn input.
         private float m_OriginalPitch;              // The pitch of the audio source at the start of the scene.
+        private bool isMine;                        // 自分のタンクかどうか判定
         private ParticleSystem[] m_particleSystems; // References to all the particles systems used by the Tanks
 
         private bool isInvincible = false; // ワームホール使用中の無敵確認
         private bool canAct = true;
         private Renderer[] renderers; // 点滅エフェクト用
         public bool isCooldown = false; // クールダウン判定
-        private void Awake ()
+        public delegate void InvincibilityChanged(bool state);
+        public event InvincibilityChanged OnInvincibilityChanged;
+        private void Awake()
         {
-            m_Rigidbody = GetComponent<Rigidbody> ();
+            m_Rigidbody = GetComponent<Rigidbody>();
+            isMine = photonView.IsMine; // 自分のタンクかどうかを判定
         }
 
 
-        private void OnEnable ()
+        private void OnEnable()
         {
             m_Rigidbody.isKinematic = false;
 
@@ -42,29 +47,28 @@ namespace Complete
             m_TurnInputValue = 0f;
 
             m_particleSystems = GetComponentsInChildren<ParticleSystem>();
-            for (int i = 0; i < m_particleSystems.Length; ++i)
+            foreach (var ps in m_particleSystems)
             {
-                m_particleSystems[i].Play();
+                ps.Play();
             }
         }
 
 
-        private void OnDisable ()
+        private void OnDisable()
         {
             m_Rigidbody.isKinematic = true;
 
-            for(int i = 0; i < m_particleSystems.Length; ++i)
+            foreach (var ps in m_particleSystems)
             {
-                m_particleSystems[i].Stop();
+                ps.Stop();
             }
         }
 
 
-        private void Start ()
+        private void Start()
         {
             m_MovementAxisName = "Vertical" + m_PlayerNumber;
             m_TurnAxisName = "Horizontal" + m_PlayerNumber;
-
             // Initialize the turret turn axis name based on player number
             m_TurretTurnAxisName = "TurretTurn" + m_PlayerNumber; // Assuming the turret turn axis is defined like this
 
@@ -73,23 +77,27 @@ namespace Complete
         }
 
 
-        private void Update ()
+        private void Update()
         {
-            m_MovementInputValue = Input.GetAxis (m_MovementAxisName);
-            m_TurnInputValue = Input.GetAxis (m_TurnAxisName);
+            if (!isMine) return; // 自分のタンク以外は操作しない
+            m_MovementInputValue = Input.GetAxis(m_MovementAxisName);
+            m_TurnInputValue = Input.GetAxis(m_TurnAxisName);
 
-            EngineAudio ();
+            EngineAudio();
             if (!canAct) return; // 行動制限中は操作不可
         }
 
         public void SetInvincible(bool state)
         {
-        isInvincible = state;
+            isInvincible = state;
+            OnInvincibilityChanged?.Invoke(state); // 状態変更時に通知
         }
-        private void FixedUpdate ()
+        private void FixedUpdate()
         {
-            Move ();
-            Turn ();
+            if (!isMine || isInvincible) return;
+
+            Move();
+            Turn();
             TurretTurn(); // Call the turret rotation method
         }
 
@@ -103,22 +111,22 @@ namespace Complete
             canAct = true;
         }
 
-        private void Move ()
+        private void Move()
         {
             Vector3 movement = transform.forward * m_MovementInputValue * m_Speed * Time.deltaTime;
             m_Rigidbody.MovePosition(m_Rigidbody.position + movement);
         }
 
 
-        private void Turn ()
+        private void Turn()
         {
             float turn = m_TurnInputValue * m_TurnSpeed * Time.deltaTime;
-            Quaternion turnRotation = Quaternion.Euler (0f, turn, 0f);
-            m_Rigidbody.MoveRotation (m_Rigidbody.rotation * turnRotation);
+            Quaternion turnRotation = Quaternion.Euler(0f, turn, 0f);
+            m_Rigidbody.MoveRotation(m_Rigidbody.rotation * turnRotation);
         }
 
 
-        private void TurretTurn ()
+        private void TurretTurn()
         {
             // Get the input for turret turning
             float turretTurnInput = Input.GetAxis(m_TurretTurnAxisName);
@@ -135,15 +143,15 @@ namespace Complete
         }
 
 
-        private void EngineAudio ()
+        private void EngineAudio()
         {
-            if (Mathf.Abs (m_MovementInputValue) < 0.1f && Mathf.Abs (m_TurnInputValue) < 0.1f)
+            if (Mathf.Abs(m_MovementInputValue) < 0.1f && Mathf.Abs(m_TurnInputValue) < 0.1f)
             {
                 if (m_MovementAudio.clip == m_EngineDriving)
                 {
                     m_MovementAudio.clip = m_EngineIdling;
-                    m_MovementAudio.pitch = Random.Range (m_OriginalPitch - m_PitchRange, m_OriginalPitch + m_PitchRange);
-                    m_MovementAudio.Play ();
+                    m_MovementAudio.pitch = Random.Range(m_OriginalPitch - m_PitchRange, m_OriginalPitch + m_PitchRange);
+                    m_MovementAudio.Play();
                 }
             }
             else
@@ -158,10 +166,16 @@ namespace Complete
         }
         public void StartBlinking()
         {
+            photonView.RPC("RPC_StartBlinking", RpcTarget.All);
+        }
+        [PunRPC]
+        private void RPC_StartBlinking()
+        {
             StartCoroutine(BlinkEffect());
         }
 
-        public void StopBlinking()
+        [PunRPC]
+        public void RPC_StopBlinking()
         {
             StopAllCoroutines(); // 点滅エフェクトを停止
             SetVisible(true);
@@ -187,14 +201,39 @@ namespace Complete
         }
         public void StartCooldown(float duration)
         {
-            StartCoroutine(CooldownCoroutine(duration));
+            photonView.RPC("RPC_StartCooldown", RpcTarget.All, duration);
         }
 
+        [PunRPC]
+        private void RPC_StartCooldown(float duration)
+        {
+            StartCoroutine(CooldownCoroutine(duration));
+        }
         private System.Collections.IEnumerator CooldownCoroutine(float duration)
         {
-        isCooldown = true;
-        yield return new WaitForSeconds(duration);
-        isCooldown = false;
-    }
+            isCooldown = true;
+            yield return new WaitForSeconds(duration);
+            isCooldown = false;
+        }
+
+        public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
+        {
+            if (stream.IsWriting)
+            {
+                stream.SendNext(transform.position);
+                stream.SendNext(transform.rotation);
+                stream.SendNext(m_MovementInputValue);
+                stream.SendNext(m_TurnInputValue);
+                stream.SendNext(isInvincible);
+            }
+            else
+            {
+                transform.position = (Vector3)stream.ReceiveNext();
+                transform.rotation = (Quaternion)stream.ReceiveNext();
+                m_MovementInputValue = (float)stream.ReceiveNext();
+                m_TurnInputValue = (float)stream.ReceiveNext();
+                isInvincible = (bool)stream.ReceiveNext();
+            }
+        }
     }
 }
