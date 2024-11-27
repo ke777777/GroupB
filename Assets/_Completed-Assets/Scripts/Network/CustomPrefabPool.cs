@@ -26,7 +26,6 @@ public class CustomPrefabPool : IPunPrefabPool
         if (prefabDictionary.TryGetValue(prefabId, out GameObject prefab))
         {
             GameObject obj = Object.Instantiate(prefab, position, rotation);
-            obj.SetActive(false); // 非アクティブに設定
             Debug.Log($"CustomPrefabPool instantiated '{prefabId}' at {position}, set inactive: {obj.activeSelf}");
             return obj;
         }

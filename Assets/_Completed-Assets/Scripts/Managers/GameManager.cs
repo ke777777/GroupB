@@ -208,11 +208,21 @@ namespace Complete
 
             CurrentGameState = newState;
 
-            GameStateChanged?.Invoke(newState);
+            if (GameStateChanged != null)
+            {
+                GameStateChanged.Invoke(newState);
+            }
 
             if (PhotonNetwork.IsMasterClient)
             {
-                photonView.RPC(nameof(SetGameState), RpcTarget.Others, newState);
+                if (photonView != null)
+                {
+                    photonView.RPC(nameof(SetGameStateRPC), RpcTarget.Others, newState);
+                }
+                else
+                {
+                    Debug.LogError("photonView is null in SetGameState.");
+                }
             }
         }
 

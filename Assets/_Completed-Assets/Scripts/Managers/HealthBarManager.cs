@@ -47,6 +47,10 @@ namespace Complete
                     tankHealth.OnHealthChanged += HandleHealthChanged;
                     HandleHealthChanged(tankHealth.CurrentHealth, tankHealth.StartingHealth, tank.m_PlayerNumber);
                 }
+                else
+                {
+                    Debug.LogWarning($"TankHealth component not found on Tank {tank.m_PlayerNumber}.");
+                }
             }
         }
 
