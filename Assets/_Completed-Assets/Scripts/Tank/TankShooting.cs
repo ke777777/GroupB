@@ -30,11 +30,13 @@ namespace Complete
         private float m_ChargeSpeed;                // How fast the launch force increases, based on the max charge time.
         private bool m_Fired;                       // Whether or not the shell has been launched with this button press.
 
-        private Dictionary<string, WeaponStockData> weaponStockDictionary = new Dictionary<string, WeaponStockData>()
+        private Dictionary<string, WeaponStockData> weaponStockDictionary;
+        /* = new Dictionary<string, WeaponStockData>()
         {
             { "Shell", new WeaponStockData(10, 50, 10) },
             { "Mine", new WeaponStockData(1, 3, 1) }
-        };
+        };*/
+
         private WeaponStockData shellStockData; //砲弾の所持数
         private WeaponStockData mineStockData; //地雷の所持数
 
@@ -141,12 +143,16 @@ namespace Complete
             WeaponStockChanged?.Invoke("Shell", weaponStockDictionary["Shell"].CurrentWeaponNumber);
 
             // Create an instance of the shell and store a reference to it's rigidbody.
-            Rigidbody shellInstance =
+            /* Rigidbody shellInstance =
                 Instantiate(m_Shell, m_FireTransform.position, m_FireTransform.rotation) as Rigidbody;
 
             // Set the shell's velocity to the launch force in the fire position's forward direction.
             shellInstance.velocity = m_CurrentLaunchForce * m_FireTransform.forward;
+            */
+            object[] initData = new object[] { m_PlayerNumber };
+            Rigidbody shellInstance = PhotonNetwork.Instantiate("ShellPrefab", m_FireTransform.position, m_FireTransform.rotation, 0, initData).GetComponent<Rigidbody>();
 
+            shellInstance.velocity = m_CurrentLaunchForce * m_FireTransform.forward;
             // Change the clip to the firing clip and play it.
             m_ShootingAudio.clip = m_FireClip;
             m_ShootingAudio.Play();
@@ -196,7 +202,8 @@ namespace Complete
             }
 
             // 地雷を生成
-            Instantiate(minePrefab, transform.position, Quaternion.identity);
+            object[] initData = new object[] { m_PlayerNumber };
+            PhotonNetwork.Instantiate("MinePrefab", transform.position, Quaternion.identity, 0, initData);
 
             weaponStockDictionary["Mine"].DecrementWeaponNumber();
             WeaponStockChanged?.Invoke("Mine", weaponStockDictionary["Mine"].CurrentWeaponNumber);

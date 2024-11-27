@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using Photon.Pun;
 
 
 namespace Complete
@@ -24,7 +25,7 @@ namespace Complete
                 1f,                      // Y座標（固定）
                 Random.Range(-40f, 40f)  // Z座標の範囲
             );
-            Instantiate(data.cartridgePrefab, randomPosition, Quaternion.identity);
+            PhotonNetwork.Instantiate(data.cartridgePrefab.name, randomPosition, Quaternion.identity);
         }
 
         private void HandleGameStateChanged(GameManager.GameState newState)

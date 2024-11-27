@@ -5,7 +5,7 @@ namespace Complete
 {
     public class TankMovement : MonoBehaviourPun, IPunObservable
     {
-        public int m_PlayerNumber = 1;              // Used to identify which tank belongs to which player.  This is set by this tank's manager.
+        public int m_PlayerNumber;              // Used to identify which tank belongs to which player.  This is set by this tank's manager.
         public float m_Speed = 12f;                 // How fast the tank moves forward and back.
         public float m_TurnSpeed = 180f;            // How fast the tank turns in degrees per second.
         public float m_TurretTurnSpeed = 90f;       // How fast the turret rotates in degrees per second.
@@ -32,11 +32,23 @@ namespace Complete
         public bool isCooldown = false; // クールダウン判定
         public delegate void InvincibilityChanged(bool state);
         public event InvincibilityChanged OnInvincibilityChanged;
+
         private void Awake()
         {
             m_Rigidbody = GetComponent<Rigidbody>();
-            isMine = photonView.IsMine; // 自分のタンクかどうかを判定
+            isMine = photonView.IsMine;
+
+            if (photonView.InstantiationData != null && photonView.InstantiationData.Length > 0)
+            {
+                m_PlayerNumber = (int)photonView.InstantiationData[0];
+                Debug.Log($"PlayerNumber for this tank is {m_PlayerNumber}");
+            }
+            else
+            {
+                Debug.LogError("m_PlayerNumber not set in InstantiationData");
+            }
         }
+
 
 
         private void OnEnable()

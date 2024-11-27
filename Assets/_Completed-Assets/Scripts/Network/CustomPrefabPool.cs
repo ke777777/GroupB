@@ -6,20 +6,21 @@ public class CustomPrefabPool : IPunPrefabPool
 {
     private readonly Dictionary<string, GameObject> prefabDictionary = new Dictionary<string, GameObject>();
 
-    // プレハブを登録する
+    // プレハブを登録するメソッド
     public void RegisterPrefab(string prefabName, GameObject prefab)
     {
         if (!prefabDictionary.ContainsKey(prefabName))
         {
             prefabDictionary.Add(prefabName, prefab);
+            Debug.Log($"Prefab '{prefabName}' registered successfully.");
         }
         else
         {
-            Debug.LogWarning($"Prefab with name {prefabName} is already registered.");
+            Debug.LogWarning($"Prefab with name '{prefabName}' is already registered.");
         }
     }
 
-    // プレハブを生成する際に呼ばれる
+    // プレハブをインスタンス化するメソッド
     public GameObject Instantiate(string prefabId, Vector3 position, Quaternion rotation)
     {
         if (prefabDictionary.TryGetValue(prefabId, out GameObject prefab))
@@ -27,11 +28,11 @@ public class CustomPrefabPool : IPunPrefabPool
             return Object.Instantiate(prefab, position, rotation);
         }
 
-        Debug.LogError($"Prefab with name {prefabId} not found in CustomPrefabPool.");
+        Debug.LogError($"Prefab with name '{prefabId}' not found in CustomPrefabPool.");
         return null;
     }
 
-    // プレハブを削除する際に呼ばれる
+    // プレハブを破棄するメソッド
     public void Destroy(GameObject gameObject)
     {
         Object.Destroy(gameObject);

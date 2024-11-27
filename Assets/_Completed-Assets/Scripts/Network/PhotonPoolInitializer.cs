@@ -8,7 +8,7 @@ public class PhotonPoolInitializer : MonoBehaviour
     public class PrefabEntry
     {
         public string prefabName; // PhotonNetwork.Instantiate で使用する名前
-        public GameObject prefab; // 実際のプレハブ
+        public GameObject prefab;  // 実際のプレハブ
     }
 
     [Header("Prefab Entries")]
@@ -26,6 +26,10 @@ public class PhotonPoolInitializer : MonoBehaviour
             if (entry.prefab != null && !string.IsNullOrEmpty(entry.prefabName))
             {
                 customPrefabPool.RegisterPrefab(entry.prefabName, entry.prefab);
+            }
+            else
+            {
+                Debug.LogWarning("PrefabEntry has null prefab or empty prefabName.");
             }
         }
     }
