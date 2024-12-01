@@ -370,12 +370,25 @@ namespace Complete
 
             // ゲームを終了し、メッセージを表示
             m_MessageText.text = $"Player {otherPlayer.NickName} has left the game.\nYou win by default!";
-            StartCoroutine(ReturnToTitleAfterDelay(5f)); // 5秒後にタイトル画面に戻る
+            StartCoroutine(HandlePlayerLeft()); // 5秒後にタイトル画面に戻る
         }
-
-        private IEnumerator ReturnToTitleAfterDelay(float delay)
+        private IEnumerator HandlePlayerLeft()
         {
-            yield return new WaitForSeconds(delay);
+            // ゲームループを停止
+            StopAllCoroutines();
+
+            // 残ったプレイヤーをゲームの勝者に設定
+            m_GameWinner = m_Tanks.FirstOrDefault(t => t.m_Instance != null && t.m_Instance.GetComponent<PhotonView>().IsMine);
+
+            // 勝利数を更新
+            if (m_GameWinner != null)
+            {
+                m_GameWinner.m_Wins = m_NumRoundsToWin;
+                CountWinsManager.Instance?.UpdateWinStars();
+            }
+
+            // 一定時間待機してからタイトル画面に戻る
+            yield return new WaitForSeconds(5f);
             PhotonNetwork.LoadLevel(SceneNames.TitleScene);
         }
 

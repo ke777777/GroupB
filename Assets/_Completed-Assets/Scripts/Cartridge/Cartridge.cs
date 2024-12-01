@@ -43,6 +43,7 @@ namespace Complete
             // カートリッジを消滅
             Destroy(gameObject);
         }
+
         private void OnTriggerEnter(Collider other)
         {
             if (other.CompareTag("Player"))
@@ -51,10 +52,15 @@ namespace Complete
                 if (tankShooting != null && tankShooting.photonView.IsMine)
                 {
                     tankShooting.GainingWeaponNumber(cartridgeData.weaponType);
-                    PhotonNetwork.Destroy(gameObject);
+                    photonView.RPC(nameof(DestroyCartridge), RpcTarget.MasterClient);
                 }
             }
         }
 
+        [PunRPC]
+        private void DestroyCartridge()
+        {
+            PhotonNetwork.Destroy(gameObject);
+        }
     }
 }
