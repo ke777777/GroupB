@@ -24,7 +24,6 @@ namespace Complete
                 Random.Range(-40f, 40f)  // ZÀ•W‚Ì”ÍˆÍ
             );
 
-            string prefabPath = $"Resources/{data.cartridgePrefab.name}"; // Resources“à‚ÌƒpƒX
             GameObject prefab = Resources.Load<GameObject>(data.cartridgePrefab.name);
 
             if (prefab != null)

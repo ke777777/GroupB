@@ -135,7 +135,16 @@ namespace Complete
                             m_Tanks[playerIndex].Setup();
 
                             Debug.Log($"Spawned Tank for Player {player.ActorNumber}");
+                            if (tank.GetComponent<PhotonView>().InstantiationData == null)
+                            {
+                                Debug.LogError($"InstantiationData is null for the tank of Player {player.ActorNumber}");
+                            }
+                            else
+                            {
+                                Debug.Log($"InstantiationData is valid for the tank of Player {player.ActorNumber}");
+                            }
                         }
+
                         else
                         {
                             Debug.LogError($"Failed to instantiate CompleteTank for player {player.ActorNumber}");
@@ -187,6 +196,7 @@ namespace Complete
                     if (photonView != null && photonView.InstantiationData != null && photonView.InstantiationData.Length > 0)
                     {
                         int playerNumber = (int)photonView.InstantiationData[0];
+                        Debug.Log($"Tank found with valid InstantiationData for Player {playerNumber}");
                         int playerIndex = playerNumber - 1;
 
                         // プレイヤー番号が有効で、まだインスタンスが割り当てられていない場合
@@ -203,7 +213,7 @@ namespace Complete
                     }
                     else
                     {
-                        Debug.LogWarning("Tank missing PhotonView or InstantiationData.");
+                        Debug.LogError("InstantiationData is null or invalid for a tank.");
                     }
                 }
 
@@ -350,25 +360,18 @@ namespace Complete
 
             // See if there is a winner now the round is over.
             m_RoundWinner = GetRoundWinner();
+
             if (m_RoundWinner != null)
             {
-                m_RoundWinner.m_Wins++;
-                // Debug.Log($"{m_RoundWinner.m_ColoredPlayerText} wins this round! Total wins: {m_RoundWinner.m_Wins}");
+                IncrementWinCount(m_RoundWinner.m_PlayerNumber); // 勝利数を増加
             }
 
             // Now the winner's score has been incremented, see if someone has one the game.
             m_GameWinner = GetGameWinner();
 
-            if (m_RoundWinner != null)
+            if (CountWinsManager.Instance != null)
             {
-                m_RoundWinner.m_Wins++;
-            }
-
-            m_GameWinner = GetGameWinner();
-
-            if (CountWins.Instance != null)
-            {
-                CountWins.Instance.UpdateWinStars();
+                CountWinsManager.Instance.UpdateWinStars();
             }
 
             if (m_GameWinner != null)
@@ -384,6 +387,45 @@ namespace Complete
 
             // Wait for the specified length of time until yielding control back to the game loop.
             yield return m_EndWait;
+        }
+        [PunRPC]
+        private void UpdateWinCounts(int playerNumber, int wins)
+        {
+            foreach (var tank in m_Tanks)
+            {
+                if (tank.m_PlayerNumber == playerNumber)
+                {
+                    tank.m_Wins = wins;
+                    Debug.Log($"Player {playerNumber} wins updated to {wins}");
+                    break;
+                }
+            }
+
+            if (CountWinsManager.Instance != null)
+            {
+                CountWinsManager.Instance.UpdateWinStars(); // 勝利数の表示を更新
+            }
+        }
+
+        public void IncrementWinCount(int playerNumber)
+        {
+            if (PhotonNetwork.IsMasterClient) // マスタークライアントのみが勝利数を更新
+            {
+                foreach (var tank in m_Tanks)
+                {
+                    if (tank.m_PlayerNumber == playerNumber)
+                    {
+                        tank.m_Wins++;
+                        photonView.RPC(nameof(UpdateWinCounts), RpcTarget.Others, playerNumber, tank.m_Wins);
+                        break;
+                    }
+                }
+
+                if (CountWinsManager.Instance != null)
+                {
+                    CountWinsManager.Instance.UpdateWinStars(); // マスタークライアント側でも表示を更新
+                }
+            }
         }
 
 

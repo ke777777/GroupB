@@ -3,10 +3,10 @@ using UnityEngine.UI;
 using System.Collections;
 namespace Complete
 {
-    public class CountWins : MonoBehaviour
+    public class CountWinsManager : MonoBehaviour
     {
-        // ƒVƒ“ƒOƒ‹ƒgƒ“‚ÌƒCƒ“ƒXƒ^ƒ“ƒX
-        public static CountWins Instance { get; private set; }
+        // ï¿½Vï¿½ï¿½ï¿½Oï¿½ï¿½ï¿½gï¿½ï¿½ï¿½ÌƒCï¿½ï¿½ï¿½Xï¿½^ï¿½ï¿½ï¿½X
+        public static CountWinsManager Instance { get; private set; }
 
         [SerializeField] private GameManager gameManager;
         [SerializeField] private Image[] player1WinStars;
@@ -14,7 +14,7 @@ namespace Complete
 
         private void Awake()
         {
-            // ƒVƒ“ƒOƒ‹ƒgƒ“‚Ìİ’è
+            // ï¿½Vï¿½ï¿½ï¿½Oï¿½ï¿½ï¿½gï¿½ï¿½ï¿½Ìİ’ï¿½
             if (Instance != null && Instance != this)
             {
                 Destroy(gameObject);
@@ -45,11 +45,13 @@ namespace Complete
 
             if (gameManager == null || gameManager.m_Tanks.Count < 2)
             {
+                Debug.LogWarning("GameManager or Tanks are not properly initialized.");
                 return;
             }
 
             int player1Wins = gameManager.m_Tanks[0].m_Wins;
             int player2Wins = gameManager.m_Tanks[1].m_Wins;
+            Debug.Log($"Updating win stars: Player1 Wins = {player1Wins}, Player2 Wins = {player2Wins}");
             UpdateStars(player1WinStars, Mathf.Min(player1Wins, player1WinStars.Length));
             UpdateStars(player2WinStars, Mathf.Min(player2Wins, player2WinStars.Length));
         }

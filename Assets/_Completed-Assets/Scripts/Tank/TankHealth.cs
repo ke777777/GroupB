@@ -1,9 +1,11 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
+using Photon.Pun;
 
 namespace Complete
 {
-    public class TankHealth : MonoBehaviour
+    public class TankHealth : MonoBehaviourPunCallbacks, IPunObservable
+
     {
         public float m_StartingHealth = 100f;               // The amount of health each tank starts with.
         public Slider m_Slider;                             // The slider to represent how much health the tank currently has.
@@ -11,7 +13,6 @@ namespace Complete
         public Color m_FullHealthColor = Color.green;       // The color the health bar will be when on full health.
         public Color m_ZeroHealthColor = Color.red;         // The color the health bar will be when on no health.
         public GameObject m_ExplosionPrefab;                // A prefab that will be instantiated in Awake, then used whenever the tank dies.
-
         private AudioSource m_ExplosionAudio;               // The audio source to play when the tank explodes.
         private ParticleSystem m_ExplosionParticles;        // The particle system the will play when the tank is destroyed.
         private float m_CurrentHealth;                      // How much health the tank currently has.
@@ -21,7 +22,7 @@ namespace Complete
         public event OnHealthChangedDelegate OnHealthChanged;
 
         public int PlayerNumber { get; set; }
-         public float CurrentHealth // 現在の体力を取得
+        public float CurrentHealth // 現在の体力を取得
         {
             get { return m_CurrentHealth; }
         }
@@ -48,8 +49,9 @@ namespace Complete
             PlayerNumber = playerNumber;
         }
 
-        private void OnEnable()
+        public new void OnEnable()
         {
+            base.OnEnable();
             m_CurrentHealth = m_StartingHealth;
             m_Dead = false;
             SetHealthUI();
@@ -62,12 +64,13 @@ namespace Complete
         }
         public void TakeDamage(float amount)
         {
+            if (!photonView.IsMine) return;
             // Reduce current health by the amount of damage done.
             m_CurrentHealth -= amount;
 
             // Change the UI elements appropriately.
             SetHealthUI();
-            OnHealthChanged?.Invoke(m_CurrentHealth, m_StartingHealth, PlayerNumber);
+            NotifyHealthChange();
 
             // If the current health is at or below zero and it has not yet been registered, call OnDeath.
             if (m_CurrentHealth <= 0f && !m_Dead)
@@ -80,7 +83,7 @@ namespace Complete
         {
             if (m_Slider != null)
             {
-            // Set the slider's value appropriately.
+                // Set the slider's value appropriately.
                 m_Slider.value = m_CurrentHealth;
                 float healthPercentage = m_CurrentHealth / m_StartingHealth;
                 // Interpolate the color of the bar between the chosen colors based on the current percentage of the starting health.
@@ -90,6 +93,7 @@ namespace Complete
 
         private void OnDeath()
         {
+            if (!photonView.IsMine) return;
             // Set the flag so that this function is only called once.
             m_Dead = true;
 
@@ -105,6 +109,23 @@ namespace Complete
 
             // Turn the tank off.
             gameObject.SetActive(false);
+        }
+        public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
+        {
+            if (stream.IsWriting)
+            {
+                // 自分のクライアントのデータを送信
+                stream.SendNext(m_CurrentHealth);
+                stream.SendNext(m_Dead);
+            }
+            else
+            {
+                // 他のクライアントからのデータを受信
+                m_CurrentHealth = (float)stream.ReceiveNext();
+                m_Dead = (bool)stream.ReceiveNext();
+
+                SetHealthUI(); // UIを更新
+            }
         }
     }
 }
