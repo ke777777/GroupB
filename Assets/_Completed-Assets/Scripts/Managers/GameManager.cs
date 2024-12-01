@@ -380,17 +380,13 @@ namespace Complete
             }
 
             // メッセージを更新
-            if (playerNumber != -1)
-            {
-                m_MessageText.text = $"Player {playerNumber} ({otherPlayer.NickName}) has left the game.\nYou are the winner!";
-            }
-            else
-            {
-                m_MessageText.text = $"Player {otherPlayer.NickName} has left the game.\nYou are the winner!";
-            }
+            string playerInfo = playerNumber > 0 ? $"Player {playerNumber}" : "A player";
+            string playerNameInfo = $" ({otherPlayer.NickName})";
+            m_MessageText.text = $"{playerInfo}{playerNameInfo} has left the game.\nYou are the winner!";
 
             StartCoroutine(HandlePlayerLeft()); // 5秒後にタイトル画面に戻る
         }
+
         private IEnumerator HandlePlayerLeft()
         {
             // ゲームループを停止
@@ -399,11 +395,21 @@ namespace Complete
             // 残ったプレイヤーをゲームの勝者に設定
             m_GameWinner = m_Tanks.FirstOrDefault(t => t.m_Instance != null && t.m_Instance.GetComponent<PhotonView>().IsMine);
 
-            // 勝利数を更新
+            // 勝利数を更新しない
+
+            // 勝者を更新
             if (m_GameWinner != null)
             {
-                m_GameWinner.m_Wins = m_NumRoundsToWin;
-                CountWinsManager.Instance?.UpdateWinStars();
+                Debug.Log($"{m_GameWinner.m_PlayerNumber} is the game winner due to opponent leaving.");
+            }
+
+            // 勝利数の表示を更新
+            CountWinsManager.Instance?.SetWinner(m_GameWinner?.m_PlayerNumber ?? 0);
+
+            // メッセージを設定
+            if (m_GameWinner != null)
+            {
+                m_MessageText.text = $"{m_GameWinner.m_ColoredPlayerText} is the winner as the opponent has left the game!";
             }
 
             // 一定時間待機してからタイトル画面に戻る

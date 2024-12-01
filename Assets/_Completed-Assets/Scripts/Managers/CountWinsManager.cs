@@ -111,5 +111,20 @@ namespace Complete
                 }
             }
         }
+        public void SetWinner(int winnerPlayerNumber)
+        {
+            if (winnerPlayerNumber == myPlayerNumber)
+            {
+                UpdateStars(myWinStars, myWinStars.Length); // 全ての星を表示
+            }
+            else if (winnerPlayerNumber == opponentPlayerNumber)
+            {
+                UpdateStars(opponentWinStars, opponentWinStars.Length); // 全ての星を表示
+            }
+            else
+            {
+                Debug.LogWarning("Invalid winnerPlayerNumber.");
+            }
+        }
     }
 }
