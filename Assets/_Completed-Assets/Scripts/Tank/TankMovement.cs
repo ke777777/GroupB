@@ -25,6 +25,7 @@ namespace Complete
         private float m_OriginalPitch;              // The pitch of the audio source at the start of the scene.
         private bool isMine;                        // 自分のタンクかどうか判定
         private ParticleSystem[] m_particleSystems; // References to all the particles systems used by the Tanks
+        private Transform m_TurretTransform;
 
         private bool isInvincible = false; // ワームホール使用中の無敵確認
         private bool canAct = true;
@@ -36,28 +37,16 @@ namespace Complete
         private void Awake()
         {
             m_Rigidbody = GetComponent<Rigidbody>();
+            m_TurretTransform = transform.Find("TankRenderers/TankTurret");
 
             if (photonView.InstantiationData != null && photonView.InstantiationData.Length > 0)
             {
                 m_PlayerNumber = (int)photonView.InstantiationData[0];
-                Debug.Log($"PlayerNumber for this tank is {m_PlayerNumber}");
             }
             else
             {
                 Debug.LogError("m_PlayerNumber not set in InstantiationData");
             }
-
-            if (photonView.IsMine)
-            {
-                // 自分が所有するタンクのみの初期化処理
-                InitializeLocalTank();
-            }
-        }
-
-        private void InitializeLocalTank()
-        {
-            // ローカルタンクの初期化処理（例: カメラ設定、UI初期化など）
-            Debug.Log($"Initializing local tank for Player {m_PlayerNumber}");
         }
 
 
@@ -90,19 +79,20 @@ namespace Complete
         private void Start()
         {
             isMine = photonView.IsMine;
-            m_MovementAxisName = "Vertical" + m_PlayerNumber;
-            m_TurnAxisName = "Horizontal" + m_PlayerNumber;
-            // Initialize the turret turn axis name based on player number
-            m_TurretTurnAxisName = "TurretTurn" + m_PlayerNumber; // Assuming the turret turn axis is defined like this
-
             m_OriginalPitch = m_MovementAudio.pitch;
+            if (photonView.IsMine)
+            {
+                m_MovementAxisName = "Vertical1";
+                m_TurnAxisName = "Horizontal1";
+                m_TurretTurnAxisName = "TurretTurn1";
+            }
             renderers = GetComponentsInChildren<Renderer>();
         }
 
 
         private void Update()
         {
-            if (!isMine) return; // 自分のタンク以外は操作しない
+            if (!photonView.IsMine) return; // 自分のタンク以外は操作しない
             m_MovementInputValue = Input.GetAxis(m_MovementAxisName);
             m_TurnInputValue = Input.GetAxis(m_TurnAxisName);
 
@@ -121,7 +111,7 @@ namespace Complete
 
             Move();
             Turn();
-            TurretTurn(); // Call the turret rotation method
+            TurretTurn();
         }
 
         public void DisableActions()
@@ -151,6 +141,8 @@ namespace Complete
 
         private void TurretTurn()
         {
+            if (!photonView.IsMine) return;
+
             // Get the input for turret turning
             float turretTurnInput = Input.GetAxis(m_TurretTurnAxisName);
 
@@ -246,12 +238,14 @@ namespace Complete
                 stream.SendNext(m_MovementInputValue);
                 stream.SendNext(m_TurnInputValue);
                 stream.SendNext(isInvincible);
+                stream.SendNext(m_TurretTransform.localRotation);
             }
             else
             {
                 m_MovementInputValue = (float)stream.ReceiveNext();
                 m_TurnInputValue = (float)stream.ReceiveNext();
                 isInvincible = (bool)stream.ReceiveNext();
+                m_TurretTransform.localRotation = (Quaternion)stream.ReceiveNext();
             }
         }
     }

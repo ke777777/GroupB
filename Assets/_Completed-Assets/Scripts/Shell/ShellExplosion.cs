@@ -13,7 +13,7 @@ namespace Complete
         public float m_MaxLifeTime = 2f;                    // The time in seconds before the shell is removed.
         public float m_ExplosionRadius = 5f;                // The maximum distance away from the explosion tanks can be and are still affected.
 
-        public bool isMine = false; // ’n—‹‚©‚Ç‚¤‚©
+        public bool isMine = false;
         private bool isDamageActive = false;
 
         private float m_LaunchForce;

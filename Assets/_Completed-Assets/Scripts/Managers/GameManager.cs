@@ -1,6 +1,5 @@
 using System.Collections;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using Photon.Pun;
 using Photon.Realtime;
@@ -222,7 +221,7 @@ namespace Complete
                 }
 
                 // プレイヤー番号をInstantiationDataとして渡す
-                object[] initData = new object[] { myTankManager.m_PlayerNumber };
+                object[] initData = new object[] { myTankManager.m_PlayerNumber, actorNumber };
 
                 GameObject tank = PhotonNetwork.Instantiate("CompleteTank", spawnTransform.position, spawnTransform.rotation, 0, initData);
 
@@ -282,10 +281,9 @@ namespace Complete
                     if (photonView != null && photonView.InstantiationData != null && photonView.InstantiationData.Length > 0)
                     {
                         int playerNumber = (int)photonView.InstantiationData[0];
-                        Debug.Log($"Tank found with valid InstantiationData for Player {playerNumber}");
+                        int actorNumber = (int)photonView.InstantiationData[1];
 
-                        // プレイヤー番号に一致するTankManagerを取得
-                        TankManager tankManager = m_Tanks.FirstOrDefault(t => t.m_PlayerNumber == playerNumber);
+                        TankManager tankManager = m_Tanks.FirstOrDefault(t => t.m_PlayerNumber == playerNumber && t.m_ActorNumber == actorNumber);
 
                         if (tankManager != null && tankManager.m_Instance == null)
                         {
@@ -293,14 +291,6 @@ namespace Complete
                             tankManager.Setup();
                             Debug.Log($"Assigned Tank to Player {playerNumber}");
                         }
-                        else if (tankManager == null)
-                        {
-                            Debug.LogWarning($"No TankManager found for Player {playerNumber}. Ensure player numbers are correctly assigned.");
-                        }
-                    }
-                    else
-                    {
-                        Debug.LogError("InstantiationData is null or invalid for a tank.");
                     }
                 }
 
@@ -319,8 +309,9 @@ namespace Complete
             TankManager myTank = m_Tanks.FirstOrDefault(t => t.m_Instance != null && t.m_ActorNumber == PhotonNetwork.LocalPlayer.ActorNumber);
             if (myTank != null)
             {
-                m_CameraControl.SetTarget(myTank.m_Instance.transform);
-                Debug.Log("Camera target set to my tank.");
+                Transform turretTransform = myTank.m_Instance.transform.Find("TankRenderers/TankTurret");
+                m_CameraControl.SetTarget(turretTransform);
+                Debug.Log("Camera target set to my tankTurrent.");
             }
             else
             {

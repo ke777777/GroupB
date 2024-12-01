@@ -48,20 +48,27 @@ namespace Complete
         {
             PlayerNumber = playerNumber;
         }
+
+        private void Start()
+        {
+            if (photonView.IsMine)
+            {
+                m_CurrentHealth = m_StartingHealth;
+            }
+        }
+
         public new void OnEnable()
         {
-            m_CurrentHealth = m_StartingHealth;
             m_Dead = false;
             SetHealthUI();
             NotifyHealthChange();
         }
 
-
-
         private void NotifyHealthChange()
         {
             OnHealthChanged?.Invoke(m_CurrentHealth, m_StartingHealth, PlayerNumber);
         }
+
         public void TakeDamage(float amount)
         {
             if (!photonView.IsMine) return;
@@ -87,11 +94,11 @@ namespace Complete
                 m_Slider.value = m_CurrentHealth;
                 float healthPercentage = m_CurrentHealth / m_StartingHealth;
                 // Interpolate the color of the bar between the chosen colors based on the current percentage of the starting health.
-                m_FillImage.color = Color.Lerp(m_ZeroHealthColor, m_FullHealthColor, m_CurrentHealth / m_StartingHealth);
+                m_FillImage.color = Color.Lerp(m_ZeroHealthColor, m_FullHealthColor, healthPercentage);
             }
         }
 
-        private void OnDeath()
+        /* private void OnDeath()
         {
             if (!photonView.IsMine) return;
             // Set the flag so that this function is only called once.
@@ -110,20 +117,38 @@ namespace Complete
             // Turn the tank off.
             gameObject.SetActive(false);
         }
+        */
+
+        private void OnDeath()
+        {
+            m_Dead = true;
+
+            photonView.RPC("RpcOnDeath", RpcTarget.AllBuffered);
+        }
+
+        [PunRPC]
+        private void RpcOnDeath()
+        {
+            m_ExplosionParticles.transform.position = transform.position;
+            m_ExplosionParticles.gameObject.SetActive(true);
+
+            m_ExplosionParticles.Play();
+            m_ExplosionAudio.Play();
+
+            gameObject.SetActive(false);
+        }
+
         public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
         {
             if (stream.IsWriting)
             {
                 // 自分のクライアントのデータを送信
                 stream.SendNext(m_CurrentHealth);
-                stream.SendNext(m_Dead);
             }
             else
             {
                 // 他のクライアントからのデータを受信
                 m_CurrentHealth = (float)stream.ReceiveNext();
-                m_Dead = (bool)stream.ReceiveNext();
-
                 SetHealthUI(); // UIを更新
             }
         }
