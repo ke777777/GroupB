@@ -4,6 +4,7 @@ using UnityEngine.UI;
 using Photon.Pun;
 using System.Collections.Generic;
 using System.Linq;
+using Photon.Realtime;
 
 namespace Complete
 {
@@ -361,6 +362,21 @@ namespace Complete
         {
             CurrentGameState = newState;
             GameStateChanged?.Invoke(newState);
+        }
+
+        public override void OnPlayerLeftRoom(Player otherPlayer)
+        {
+            Debug.Log($"Player {otherPlayer.NickName} has left the room.");
+
+            // ゲームを終了し、メッセージを表示
+            m_MessageText.text = $"Player {otherPlayer.NickName} has left the game.\nYou win by default!";
+            StartCoroutine(ReturnToTitleAfterDelay(5f)); // 5秒後にタイトル画面に戻る
+        }
+
+        private IEnumerator ReturnToTitleAfterDelay(float delay)
+        {
+            yield return new WaitForSeconds(delay);
+            PhotonNetwork.LoadLevel(SceneNames.TitleScene);
         }
 
         // This is called from start and will run each phase of the game one after another.

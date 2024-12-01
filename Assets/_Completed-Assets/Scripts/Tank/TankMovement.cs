@@ -26,7 +26,7 @@ namespace Complete
         private bool isMine;                        // 自分のタンクかどうか判定
         private ParticleSystem[] m_particleSystems; // References to all the particles systems used by the Tanks
         private Transform m_TurretTransform;
-
+        private PhotonTransformView photonTransformView;
         private bool isInvincible = false; // ワームホール使用中の無敵確認
         private bool canAct = true;
         private Renderer[] renderers; // 点滅エフェクト用
@@ -38,6 +38,7 @@ namespace Complete
         {
             m_Rigidbody = GetComponent<Rigidbody>();
             m_TurretTransform = transform.Find("TankRenderers/TankTurret");
+            photonTransformView = GetComponent<PhotonTransformView>();
 
             if (photonView.InstantiationData != null && photonView.InstantiationData.Length > 0)
             {
@@ -157,7 +158,25 @@ namespace Complete
             }
         }
 
+        public void Teleport(Vector3 position)
+        {
+            if (photonView.IsMine)
+            {
+                transform.position = position;
+                photonView.RPC("RPC_Teleport", RpcTarget.Others, position);
+            }
+        }
 
+        [PunRPC]
+        private void RPC_Teleport(Vector3 position)
+        {
+            transform.position = position;
+            if (photonTransformView != null)
+            {
+                photonTransformView.enabled = false;
+                photonTransformView.enabled = true;
+            }
+        }
         private void EngineAudio()
         {
             if (Mathf.Abs(m_MovementInputValue) < 0.1f && Mathf.Abs(m_TurnInputValue) < 0.1f)
@@ -183,6 +202,7 @@ namespace Complete
         {
             photonView.RPC("RPC_StartBlinking", RpcTarget.All);
         }
+
         [PunRPC]
         private void RPC_StartBlinking()
         {

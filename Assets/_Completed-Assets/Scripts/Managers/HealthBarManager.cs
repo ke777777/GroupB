@@ -37,10 +37,10 @@ namespace Complete
         {
             // 自分のタンクを見つける
             TankManager myTank = null;
-            while (myTank == null)
+            while (myTank == null || myTank.m_Instance == null)
             {
                 myTank = gameManager.m_Tanks.FirstOrDefault(t => t.m_Instance != null && t.m_Instance.GetComponent<PhotonView>().IsMine);
-                if (myTank == null)
+                if (myTank == null || myTank.m_Instance == null)
                 {
                     yield return new WaitForSeconds(0.5f);
                 }
@@ -49,18 +49,16 @@ namespace Complete
             myPlayerNumber = myTank.m_PlayerNumber;
 
             // 相手のタンクを見つける
-            TankManager opponentTank = gameManager.m_Tanks.FirstOrDefault(t => t.m_PlayerNumber != myPlayerNumber);
-
-            if (opponentTank != null)
+            TankManager opponentTank = null;
+            while (opponentTank == null || opponentTank.m_Instance == null)
             {
-                opponentPlayerNumber = opponentTank.m_PlayerNumber;
+                opponentTank = gameManager.m_Tanks.FirstOrDefault(t => t.m_PlayerNumber != myPlayerNumber && t.m_Instance != null);
+                if (opponentTank == null || opponentTank.m_Instance == null)
+                {
+                    yield return new WaitForSeconds(0.5f);
+                }
             }
-            else
-            {
-                Debug.LogError("Opponent tank not found.");
-                yield break;
-            }
-
+            opponentPlayerNumber = opponentTank.m_PlayerNumber;
             // 自分と相手のタンクのヘルスをリンク
             LinkHealth(myTank, myHealthSlider, myFillImage);
             LinkHealth(opponentTank, opponentHealthSlider, opponentFillImage);

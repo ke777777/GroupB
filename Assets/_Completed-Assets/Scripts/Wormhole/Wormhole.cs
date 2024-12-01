@@ -75,7 +75,7 @@ public class Wormhole : MonoBehaviourPun
         }
 
         // 戦車の位置をワープ先に設定
-        tank.transform.position = targetPosition;
+        tank.Teleport(targetPosition);
 
         // 少し待機して位置を安定させる
         yield return new WaitForSeconds(0.1f);
@@ -93,7 +93,7 @@ public class Wormhole : MonoBehaviourPun
         }
 
         // 無敵状態と行動制限を解除
-        tank.RPC_StopBlinking();
+        tank.photonView.RPC("RPC_StopBlinking", RpcTarget.All);
         tank.SetInvincible(false);
         tank.EnableActions();
 

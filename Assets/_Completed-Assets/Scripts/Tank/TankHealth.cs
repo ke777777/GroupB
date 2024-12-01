@@ -70,6 +70,7 @@ namespace Complete
             // Reduce current health by the amount of damage done.
             m_CurrentHealth -= amount;
 
+            m_CurrentHealth = Mathf.Max(m_CurrentHealth, 0f);
             // Change the UI elements appropriately.
             SetHealthUI();
             NotifyHealthChange();
@@ -79,6 +80,15 @@ namespace Complete
             {
                 OnDeath();
             }
+            photonView.RPC("UpdateHealth", RpcTarget.Others, m_CurrentHealth);
+        }
+
+        [PunRPC]
+        private void UpdateHealth(float newHealth)
+        {
+            m_CurrentHealth = newHealth;
+            SetHealthUI();
+            NotifyHealthChange();
         }
 
         private void SetHealthUI()
