@@ -49,16 +49,11 @@ namespace Complete
             PlayerNumber = playerNumber;
         }
 
-        private void Start()
-        {
-            if (photonView.IsMine)
-            {
-                m_CurrentHealth = m_StartingHealth;
-            }
-        }
+
 
         public new void OnEnable()
         {
+            m_CurrentHealth = m_StartingHealth;
             m_Dead = false;
             SetHealthUI();
             NotifyHealthChange();

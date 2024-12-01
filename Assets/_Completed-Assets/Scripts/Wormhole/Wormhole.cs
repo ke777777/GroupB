@@ -16,12 +16,11 @@ public class Wormhole : MonoBehaviourPun
 
         if (other.CompareTag("Player"))
         {
-            TankMovement tank = other.GetComponent<TankMovement>();
+            PhotonView tankPhotonView = other.GetComponent<PhotonView>();
 
-            if (tank != null && !cooldownTanks.Contains(tank.photonView.ViewID))
+            if (tankPhotonView != null && tankPhotonView.IsMine && !cooldownTanks.Contains(tankPhotonView.ViewID))
             {
-                // StartCoroutine(TeleportTank(tank));
-                photonView.RPC("StartTeleport", RpcTarget.All, tank.photonView.ViewID);
+                StartCoroutine(TeleportTank(other.gameObject));
             }
         }
         else if (other.CompareTag("Shell"))
@@ -30,22 +29,11 @@ public class Wormhole : MonoBehaviourPun
         }
     }
 
-    [PunRPC]
-    public void StartTeleport(int tankViewID)
-    {
-        var tankPhotonView = PhotonView.Find(tankViewID);
-        if (tankPhotonView != null)
-        {
-            TankMovement tank = tankPhotonView.GetComponent<TankMovement>();
-            if (tank != null && !cooldownTanks.Contains(tankViewID))
-            {
-                StartCoroutine(TeleportTank(tank));
-            }
-        }
-    }
 
-    private IEnumerator TeleportTank(TankMovement tank)
+
+    private IEnumerator TeleportTank(GameObject tankObject)
     {
+        TankMovement tank = tankObject.GetComponent<TankMovement>();
         if (tank == null) yield break;
 
         // タンクをクールダウンリストに追加

@@ -2,7 +2,6 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using Photon.Pun;
-using Photon.Realtime;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -300,9 +299,7 @@ namespace Complete
                     Debug.Log("All tanks have been assigned successfully.");
                     break;
                 }
-
-                Debug.Log("Not all tanks are assigned. Retrying...");
-                yield return new WaitForSeconds(0.5f);
+                yield return null;
             }
 
             // 自分のタンクをカメラのターゲットに設定
@@ -442,15 +439,16 @@ namespace Complete
 
             // See if there is a winner now the round is over.
             m_RoundWinner = GetRoundWinner();
-
-            if (m_RoundWinner != null)
+            if (PhotonNetwork.IsMasterClient)
             {
-                IncrementWinCount(m_RoundWinner.m_PlayerNumber); // 勝利数を増加
+                if (m_RoundWinner != null)
+                {
+                    IncrementWinCount(m_RoundWinner.m_PlayerNumber); // 勝利数を増加
+                }
+
+                // Now the winner's score has been incremented, see if someone has one the game.
+                m_GameWinner = GetGameWinner();
             }
-
-            // Now the winner's score has been incremented, see if someone has one the game.
-            m_GameWinner = GetGameWinner();
-
             if (CountWinsManager.Instance != null)
             {
                 CountWinsManager.Instance.UpdateWinStars();
@@ -491,6 +489,9 @@ namespace Complete
 
         public void IncrementWinCount(int playerNumber)
         {
+            if (!PhotonNetwork.IsMasterClient)
+                return;
+
             foreach (var tank in m_Tanks)
             {
                 if (tank.m_PlayerNumber == playerNumber)

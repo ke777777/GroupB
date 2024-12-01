@@ -36,6 +36,11 @@ namespace Complete
         public delegate void OnMinePlaced();
         public event OnMinePlaced MinePlaced;
 
+        public Dictionary<string, WeaponStockData> GetWeaponStocks()
+        {
+            return weaponStockDictionary;
+        }
+
         private void OnEnable()
         {
             // Reset launch force and UI when enabled
@@ -155,9 +160,6 @@ namespace Complete
             {
                 weaponStockDictionary[weaponName].GainingWeaponNumber();
                 WeaponStockChanged?.Invoke(weaponName, weaponStockDictionary[weaponName].CurrentWeaponNumber);
-
-                // 全クライアントにストック数の更新を通知
-                photonView.RPC("UpdateWeaponStock", RpcTarget.Others, weaponName, weaponStockDictionary[weaponName].CurrentWeaponNumber);
             }
             else
             {
