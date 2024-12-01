@@ -42,21 +42,20 @@ namespace Complete
 
             // Disable the prefab so it can be activated when it's required.
             m_ExplosionParticles.gameObject.SetActive(false);
-            InitializeHealth();
         }
 
         public void Initialize(int playerNumber)
         {
             PlayerNumber = playerNumber;
         }
-
-        private void InitializeHealth()
+        public new void OnEnable()
         {
             m_CurrentHealth = m_StartingHealth;
             m_Dead = false;
             SetHealthUI();
             NotifyHealthChange();
         }
+
 
 
         private void NotifyHealthChange()

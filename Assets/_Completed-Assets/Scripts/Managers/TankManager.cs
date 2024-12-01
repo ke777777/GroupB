@@ -95,10 +95,6 @@ namespace Complete
                 return;
             }
 
-            PhotonView photonView = m_Instance.GetComponent<PhotonView>();
-            if (photonView != null && !photonView.IsMine)
-                return;
-
             if (m_Movement != null) m_Movement.enabled = false;
             if (m_Shooting != null) m_Shooting.enabled = false;
             if (m_CanvasGameObject != null) m_CanvasGameObject.SetActive(false);
@@ -115,10 +111,6 @@ namespace Complete
                 return;
             }
 
-            PhotonView photonView = m_Instance.GetComponent<PhotonView>();
-            if (photonView != null && !photonView.IsMine)
-                return;
-
             if (m_Movement != null) m_Movement.enabled = true;
             if (m_Shooting != null) m_Shooting.enabled = true;
             if (m_CanvasGameObject != null) m_CanvasGameObject.SetActive(true);
@@ -134,10 +126,6 @@ namespace Complete
                 Debug.LogWarning("Tank instance is null in TankManager.Reset");
                 return;
             }
-
-            PhotonView photonView = m_Instance.GetComponent<PhotonView>();
-            if (photonView != null && !photonView.IsMine)
-                return;
 
             m_Instance.transform.position = m_SpawnPoint.position;
             m_Instance.transform.rotation = m_SpawnPoint.rotation;
