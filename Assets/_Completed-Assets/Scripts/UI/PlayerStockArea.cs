@@ -7,16 +7,16 @@ public class PlayerStockArea : MonoBehaviour
     [SerializeField] private Image[] shellImages = new Image[4]; // 10発の砲弾アイコン
     [SerializeField] private Image[] mineImages = new Image[3];  // 地雷アイコン
 
-/*
-    [SerializeField] private GridLayoutGroup shellGridLayout; // 1発砲弾アイコンのレイアウト調整用
-    [SerializeField] private GridLayoutGroup tenShellGridLayout; // 10発砲弾アイコンのレイアウト調整用
-    [SerializeField] private GridLayoutGroup mineGridLayout;  // 地雷アイコンのレイアウト調整用
-    [SerializeField] private Vector2 baseResolution = new Vector2(1920, 1080); // 基準解像度
-    [SerializeField] private float scaleFactor = 1.0f; // スケール調整用の倍率
-    [SerializeField] private RectTransform stock1Area;
-    [SerializeField] private RectTransform stock10Area;
-    [SerializeField] private RectTransform mineArea;
-*/
+    /*
+        [SerializeField] private GridLayoutGroup shellGridLayout; // 1発砲弾アイコンのレイアウト調整用
+        [SerializeField] private GridLayoutGroup tenShellGridLayout; // 10発砲弾アイコンのレイアウト調整用
+        [SerializeField] private GridLayoutGroup mineGridLayout;  // 地雷アイコンのレイアウト調整用
+        [SerializeField] private Vector2 baseResolution = new Vector2(1920, 1080); // 基準解像度
+        [SerializeField] private float scaleFactor = 1.0f; // スケール調整用の倍率
+        [SerializeField] private RectTransform stock1Area;
+        [SerializeField] private RectTransform stock10Area;
+        [SerializeField] private RectTransform mineArea;
+    */
 
     /*private void Start()
     {
@@ -93,19 +93,20 @@ public class PlayerStockArea : MonoBehaviour
     }
 
     // 砲弾ストックのUIを更新
-    private void UpdateShellStock(int stockCount)
+    private void UpdateShellStock(int stockPlace)
     {
-        int tensPlace = 0;
-        int onesPlace = 0;
+        int onesPlace;
+        int tensPlace;
 
-        if (stockCount <= 10)
+        if (stockPlace <= 10)
         {
-            onesPlace = stockCount;
+            tensPlace = 0;
+            onesPlace = stockPlace;
         }
         else
         {
-            tensPlace = (stockCount - 1) / 10;
-            onesPlace = stockCount - tensPlace * 10;
+            tensPlace = (stockPlace - stockPlace % 10) / 10;
+            onesPlace = stockPlace % 10;
         }
 
         // 10発アイコンの表示を更新

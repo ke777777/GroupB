@@ -2,19 +2,25 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
 using System.Linq;
+using System.Collections.Generic; // 追加：Dictionaryを使用するため
 using Photon.Pun;
 
 namespace Complete
 {
     public class HealthBarManager : MonoBehaviour
     {
-        [SerializeField] private Slider player1HealthSlider; // プレイヤー1の体力バー
-        [SerializeField] private Image player1FillImage;     // プレイヤー1の体力バーのFill Image
-        [SerializeField] private Slider player2HealthSlider; // プレイヤー2の体力バー
-        [SerializeField] private Image player2FillImage;     // プレイヤー2の体力バーのFill Image
+        [SerializeField] private Slider myHealthSlider; // 自分の体力バー
+        [SerializeField] private Image myFillImage;     // 自分の体力バーのFill Image
+        [SerializeField] private Slider opponentHealthSlider; // 相手の体力バー
+        [SerializeField] private Image opponentFillImage;     // 相手の体力バーのFill Image
         [SerializeField] private Color fullHealthColor = Color.green; // 体力最大時の色
         [SerializeField] private Color zeroHealthColor = Color.red;   // 体力最小時の色
         [SerializeField] private GameManager gameManager;    // ゲームマネージャーの参照
+        private int myPlayerNumber;
+        private int opponentPlayerNumber;
+
+        // 追加：イベントハンドラを保持する辞書
+        private Dictionary<TankHealth, TankHealth.OnHealthChangedDelegate> healthChangedHandlers = new Dictionary<TankHealth, TankHealth.OnHealthChangedDelegate>();
 
         private void OnEnable()
         {
@@ -29,86 +35,80 @@ namespace Complete
 
         private IEnumerator WaitForTanksAndLinkHealth()
         {
-            // GameManager の初期化待ち
-            while (gameManager == null || gameManager.m_Tanks == null || gameManager.m_Tanks.Count == 0)
+            // 自分のタンクを見つける
+            TankManager myTank = null;
+            while (myTank == null)
             {
-                Debug.Log("Waiting for GameManager and Tanks to be initialized...");
-                yield return new WaitForSeconds(0.5f); // 次のフレームまで待機
+                myTank = gameManager.m_Tanks.FirstOrDefault(t => t.m_Instance != null && t.m_Instance.GetComponent<PhotonView>().IsMine);
+                if (myTank == null)
+                {
+                    yield return new WaitForSeconds(0.5f);
+                }
             }
 
-            // 各タンクのインスタンス生成待ち
-            bool allInstancesInitialized = false;
-            while (!allInstancesInitialized)
+            myPlayerNumber = myTank.m_PlayerNumber;
+
+            // 相手のタンクを見つける
+            TankManager opponentTank = gameManager.m_Tanks.FirstOrDefault(t => t.m_PlayerNumber != myPlayerNumber);
+
+            if (opponentTank != null)
             {
-                allInstancesInitialized = true;
-                foreach (var tank in gameManager.m_Tanks)
-                {
-                    if (tank.m_Instance == null)
-                    {
-                        Debug.Log($"Tank {tank.m_PlayerNumber} instance is not initialized yet. Retrying...");
-                        allInstancesInitialized = false;
-                        break;
-                    }
-                }
-                yield return new WaitForSeconds(0.5f);
+                opponentPlayerNumber = opponentTank.m_PlayerNumber;
+            }
+            else
+            {
+                Debug.LogError("Opponent tank not found.");
+                yield break;
             }
 
-            Debug.Log("All Tank instances have been initialized. Linking health...");
-
-            // 各タンクのヘルス状態をリンク
-            foreach (var tank in gameManager.m_Tanks)
-            {
-                if (tank.m_Instance == null)
-                {
-                    Debug.LogError($"Tank {tank.m_PlayerNumber} instance is null. Skipping...");
-                    continue; // インスタンスが存在しない場合はスキップ
-                }
-
-                var tankHealth = tank.m_Instance.GetComponent<TankHealth>();
-                if (tankHealth == null)
-                {
-                    Debug.LogError($"TankHealth component not found on Tank {tank.m_PlayerNumber}. Skipping...");
-                    continue; // TankHealth コンポーネントが見つからない場合はスキップ
-                }
-
-                // ヘルス変更イベントにサブスクライブ
-                tankHealth.OnHealthChanged += HandleHealthChanged;
-
-                // 初期状態を処理
-                HandleHealthChanged(tankHealth.CurrentHealth, tankHealth.StartingHealth, tank.m_PlayerNumber);
-
-                Debug.Log($"Linked health for Tank {tank.m_PlayerNumber}.");
-            }
-
-            Debug.Log("Health linking completed for all Tanks.");
+            // 自分と相手のタンクのヘルスをリンク
+            LinkHealth(myTank, myHealthSlider, myFillImage);
+            LinkHealth(opponentTank, opponentHealthSlider, opponentFillImage);
         }
 
+        private void LinkHealth(TankManager tankManager, Slider healthSlider, Image fillImage)
+        {
+            if (tankManager.m_Instance == null)
+            {
+                Debug.LogError($"Tank {tankManager.m_PlayerNumber} instance is null.");
+                return;
+            }
 
-        private void HandleHealthChanged(float currentHealth, float maxHealth, int playerNumber)
+            var tankHealth = tankManager.m_Instance.GetComponent<TankHealth>();
+            if (tankHealth == null)
+            {
+                Debug.LogError($"TankHealth component not found on Tank {tankManager.m_PlayerNumber}.");
+                return;
+            }
+
+            // イベントハンドラを作成して保持
+            TankHealth.OnHealthChangedDelegate handler = (currentHealth, maxHealth, playerNumber) =>
+            {
+                HandleHealthChanged(currentHealth, maxHealth, playerNumber, healthSlider, fillImage);
+            };
+
+            // イベントにハンドラを登録
+            tankHealth.OnHealthChanged += handler;
+
+            // ハンドラを辞書に保持
+            healthChangedHandlers[tankHealth] = handler;
+
+            // 初期状態を処理
+            HandleHealthChanged(tankHealth.CurrentHealth, tankHealth.StartingHealth, tankManager.m_PlayerNumber, healthSlider, fillImage);
+        }
+
+        private void HandleHealthChanged(float currentHealth, float maxHealth, int playerNumber, Slider healthSlider, Image fillImage)
         {
             float healthPercentage = currentHealth / maxHealth;
 
-            if (playerNumber == 1 && player1HealthSlider != null)
+            if (healthSlider != null)
             {
+                healthSlider.maxValue = maxHealth;
+                healthSlider.value = currentHealth;
 
-                player1HealthSlider.maxValue = maxHealth;
-                player1HealthSlider.value = currentHealth;
-
-                if (player1FillImage != null)
+                if (fillImage != null)
                 {
-                    // 体力割合に応じて色を変化させる
-                    player1FillImage.color = Color.Lerp(zeroHealthColor, fullHealthColor, healthPercentage);
-                }
-            }
-            else if (playerNumber == 2 && player2HealthSlider != null)
-            {
-                player2HealthSlider.maxValue = maxHealth;
-                player2HealthSlider.value = currentHealth;
-
-                if (player2FillImage != null)
-                {
-                    // 体力割合に応じて色を変化させる
-                    player2FillImage.color = Color.Lerp(zeroHealthColor, fullHealthColor, healthPercentage);
+                    fillImage.color = Color.Lerp(zeroHealthColor, fullHealthColor, healthPercentage);
                 }
             }
         }
@@ -125,7 +125,13 @@ namespace Complete
                     var tankHealth = tank.m_Instance.GetComponent<TankHealth>();
                     if (tankHealth != null)
                     {
-                        tankHealth.OnHealthChanged -= HandleHealthChanged;
+                        // イベントハンドラを解除
+                        if (healthChangedHandlers.ContainsKey(tankHealth))
+                        {
+                            tankHealth.OnHealthChanged -= healthChangedHandlers[tankHealth];
+                            healthChangedHandlers.Remove(tankHealth);
+                        }
+
                     }
                 }
             }
