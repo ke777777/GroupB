@@ -369,7 +369,7 @@ namespace Complete
             Debug.Log($"Player {otherPlayer.NickName} has left the room.");
 
             // ゲームを終了し、メッセージを表示
-            m_MessageText.text = $"Player {otherPlayer.NickName} has left the game.\nYou win by default!";
+            m_MessageText.text = $"Player {otherPlayer.NickName} has left the game.\nYou are the winner!";
             StartCoroutine(HandlePlayerLeft()); // 5秒後にタイトル画面に戻る
         }
         private IEnumerator HandlePlayerLeft()
