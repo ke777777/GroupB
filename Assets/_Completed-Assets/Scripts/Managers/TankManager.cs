@@ -43,11 +43,7 @@ namespace Complete
 
             // Set the player numbers to be consistent across the scripts.
             if (m_Movement != null) m_Movement.m_PlayerNumber = m_PlayerNumber;
-            if (m_Shooting != null)
-            {
-                m_Shooting.Initialize(m_PlayerNumber); // TankShooting にプレイヤー番号を設定
-            }
-
+            if (m_Shooting != null) m_Shooting.Initialize(m_PlayerNumber); // TankShooting にプレイヤー番号を設定
 
             // Create a string using the correct color that says 'PLAYER 1' etc based on the tank's color and the player's number.
             m_ColoredPlayerText = "<color=#" + ColorUtility.ToHtmlStringRGB(m_PlayerColor) + ">PLAYER " + m_PlayerNumber + "</color>";
@@ -61,6 +57,7 @@ namespace Complete
             {
                 renderers[i].material.color = m_PlayerColor;
             }
+
             if (m_Shooting != null)
             {
                 m_Shooting.WeaponStockChanged += HandleWeaponStockChanged;

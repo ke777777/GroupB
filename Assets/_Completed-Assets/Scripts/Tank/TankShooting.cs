@@ -122,10 +122,9 @@ namespace Complete
             weaponStockDictionary["Shell"].DecrementWeaponNumber();
             WeaponStockChanged?.Invoke("Shell", weaponStockDictionary["Shell"].CurrentWeaponNumber);
 
-            object[] initData = new object[] { photonView.ViewID }; // 自分のPhotonView IDを含む
-            Rigidbody shellInstance = PhotonNetwork.Instantiate("CompleteShell", m_FireTransform.position, m_FireTransform.rotation, 0, initData).GetComponent<Rigidbody>();
-
-            shellInstance.velocity = m_CurrentLaunchForce * m_FireTransform.forward;
+            object[] initData = new object[] { photonView.ViewID, m_CurrentLaunchForce }; // m_CurrentLaunchForce を追加
+            GameObject shellObject = PhotonNetwork.Instantiate("CompleteShell", m_FireTransform.position, m_FireTransform.rotation, 0, initData);
+            Rigidbody shellInstance = shellObject.GetComponent<Rigidbody>();
 
             m_ShootingAudio.clip = m_FireClip;
             m_ShootingAudio.Play();

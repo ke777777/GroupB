@@ -229,7 +229,7 @@ namespace Complete
                 if (tank != null)
                 {
                     myTankManager.m_Instance = tank;
-                    // myTankManager.Setup();
+                    myTankManager.Setup();
 
                     Debug.Log($"Spawned Tank for Player {myTankManager.m_PlayerNumber}");
                 }

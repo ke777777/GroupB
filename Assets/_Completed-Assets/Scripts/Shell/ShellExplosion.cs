@@ -1,8 +1,9 @@
 using UnityEngine;
+using Photon.Pun;
 
 namespace Complete
 {
-    public class ShellExplosion : MonoBehaviour
+    public class ShellExplosion : MonoBehaviourPun, IPunInstantiateMagicCallback
     {
         public LayerMask m_TankMask;                        // Used to filter what the explosion affects, this should be set to "Players".
         public ParticleSystem m_ExplosionParticles;         // Reference to the particles that will play on explosion.
@@ -15,12 +16,14 @@ namespace Complete
         public bool isMine = false; // 地雷かどうか
         private bool isDamageActive = false;
 
+        private float m_LaunchForce;
+
         private void Start()
         {
             // 地雷の場合のみクールタイムを設定
             if (isMine == true)
             {
-                Invoke(nameof(ActivateDamage),3.0f); // 3秒後にダメージを有効化
+                Invoke(nameof(ActivateDamage), 3.0f); // 3秒後にダメージを有効化
             }
             // If it isn't destroyed by then, destroy the shell after it's lifetime.
             Destroy(gameObject, m_MaxLifeTime);
@@ -33,7 +36,7 @@ namespace Complete
         {
             if (isMine && !isDamageActive)
             {
-            return;
+                return;
             }
 
             // Collect all the colliders in a sphere from the shell's current position to a radius of the explosion radius.
@@ -102,6 +105,16 @@ namespace Complete
             damage = Mathf.Max(0f, damage);
 
             return damage;
+        }
+        public void OnPhotonInstantiate(PhotonMessageInfo info)
+        {
+            object[] initData = photonView.InstantiationData;
+            if (initData != null && initData.Length >= 2)
+            {
+                m_LaunchForce = (float)initData[1]; // 発射力を取得。
+                Rigidbody rb = GetComponent<Rigidbody>();
+                rb.velocity = transform.forward * m_LaunchForce; // 発射力を使用して速度を設定。
+            }
         }
     }
 }

@@ -243,16 +243,12 @@ namespace Complete
         {
             if (stream.IsWriting)
             {
-                stream.SendNext(transform.position);
-                stream.SendNext(transform.rotation);
                 stream.SendNext(m_MovementInputValue);
                 stream.SendNext(m_TurnInputValue);
                 stream.SendNext(isInvincible);
             }
             else
             {
-                transform.position = (Vector3)stream.ReceiveNext();
-                transform.rotation = (Quaternion)stream.ReceiveNext();
                 m_MovementInputValue = (float)stream.ReceiveNext();
                 m_TurnInputValue = (float)stream.ReceiveNext();
                 isInvincible = (bool)stream.ReceiveNext();
