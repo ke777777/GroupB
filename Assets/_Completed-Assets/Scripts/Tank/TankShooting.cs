@@ -28,7 +28,7 @@ namespace Complete
         private WeaponStockData shellStockData;
         private WeaponStockData mineStockData;
 
-        [SerializeField] private GameObject minePrefab;
+        // [SerializeField] private GameObject minePrefab;
 
         public delegate void OnWeaponStockChanged(string weaponName, int currentStock);
         public event OnWeaponStockChanged WeaponStockChanged;
