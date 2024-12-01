@@ -43,38 +43,78 @@ namespace Complete
             if (m_CameraControl == null)
             {
                 Debug.LogError("CameraControl not found in the scene!");
-                return; // カメラが見つからなければ処理を中断
+                return;
             }
 
             m_StartWait = new WaitForSeconds(m_StartDelay);
             m_EndWait = new WaitForSeconds(m_EndDelay);
 
-
             if (PhotonNetwork.InRoom)
             {
-                InitializeTanks();
-                SpawnMyTank(); // 各クライアントが自分のタンクを生成
-                StartCoroutine(FindAndAssignTanks());
-                StartCoroutine(GameLoop());
+                AssignPlayerNumbers(); // プレイヤー番号を割り当てる
+                StartCoroutine(WaitForPlayerNumbersAndInitialize());
             }
+        }
+        // プレイヤー番号をマスタークライアントで割り当て、全クライアントで共有
+        private void AssignPlayerNumbers()
+        {
+            if (PhotonNetwork.IsMasterClient)
+            {
+                int playerNumber = 1;
+                foreach (var player in PhotonNetwork.PlayerList)
+                {
+                    ExitGames.Client.Photon.Hashtable props = new ExitGames.Client.Photon.Hashtable
+                    {
+                        { "PlayerNumber", playerNumber }
+                    };
+                    player.SetCustomProperties(props);
+                    playerNumber++;
+                }
+            }
+        }
+
+        // 全てのプレイヤーがプレイヤー番号を受け取るのを待つ
+        private IEnumerator WaitForPlayerNumbersAndInitialize()
+        {
+            bool allPlayersHaveNumbers = false;
+            while (!allPlayersHaveNumbers)
+            {
+                allPlayersHaveNumbers = true;
+                foreach (var player in PhotonNetwork.PlayerList)
+                {
+                    if (!player.CustomProperties.ContainsKey("PlayerNumber"))
+                    {
+                        allPlayersHaveNumbers = false;
+                        break;
+                    }
+                }
+                if (!allPlayersHaveNumbers)
+                {
+                    yield return new WaitForSeconds(0.1f);
+                }
+            }
+
+            InitializeTanks();
+            SpawnMyTank(); // 各クライアントが自分のタンクを生成
+            StartCoroutine(FindAndAssignTanks());
+            StartCoroutine(GameLoop());
         }
 
         private void InitializeTanks()
         {
-            var sortedPlayers = PhotonNetwork.PlayerList.OrderBy(p => p.ActorNumber).ToList();
-
             m_Tanks = new List<TankManager>();
 
-            for (int i = 0; i < sortedPlayers.Count; i++)
+            foreach (var player in PhotonNetwork.PlayerList)
             {
-                int playerNumber = i + 1; // プレイヤー番号を1から割り当て
+                int playerNumber = (int)player.CustomProperties["PlayerNumber"];
+                int actorNumber = player.ActorNumber;
 
                 TankManager tankManager = new TankManager
                 {
                     m_PlayerNumber = playerNumber,
                     m_PlayerColor = GetPlayerColor(playerNumber),
                     m_SpawnPoint = GetSpawnPoint(playerNumber),
-                    m_ActorNumber = sortedPlayers[i].ActorNumber
+                    m_ActorNumber = actorNumber
                 };
                 m_Tanks.Add(tankManager);
             }
@@ -85,12 +125,12 @@ namespace Complete
 
         private Color GetPlayerColor(int playerNumber)
         {
-            if (playerNumber == 1)
-                return Color.blue;
-            else if (playerNumber == 2)
-                return Color.red;
-            else
-                return Color.white;
+            switch (playerNumber)
+            {
+                case 1: return Color.blue;
+                case 2: return Color.red;
+                default: return Color.white;
+            }
         }
 
         private Transform GetSpawnPoint(int playerNumber)
@@ -189,7 +229,7 @@ namespace Complete
                 if (tank != null)
                 {
                     myTankManager.m_Instance = tank;
-                    myTankManager.Setup();
+                    // myTankManager.Setup();
 
                     Debug.Log($"Spawned Tank for Player {myTankManager.m_PlayerNumber}");
                 }
@@ -206,7 +246,7 @@ namespace Complete
 
 
 
-        [PunRPC]
+        /* [PunRPC]
         private void SyncTankSetup(int playerNumber, Vector3 spawnPosition, Quaternion spawnRotation)
         {
             foreach (var tank in m_Tanks)
@@ -229,10 +269,9 @@ namespace Complete
             }
             Debug.LogError($"Failed to synchronize Tank Setup for Player {playerNumber}");
         }
-
+        */
         private IEnumerator FindAndAssignTanks()
         {
-            // タンクのアサインが完了するまでループを続ける
             while (true)
             {
                 GameObject[] tanks = GameObject.FindGameObjectsWithTag("Player");
@@ -265,33 +304,23 @@ namespace Complete
                     }
                 }
 
-                // 自分のタンクが割り当てられたら、カメラのターゲットを設定
-                TankManager myTank = m_Tanks.FirstOrDefault(t => t.m_Instance != null && t.m_Instance.GetComponent<PhotonView>().IsMine);
-                if (myTank != null)
-                {
-                    m_CameraControl.SetTarget(myTank.m_Instance.transform);
-                    Debug.Log("Camera target set to my tank.");
-                    break;
-                }
-
-                // すべてのタンクにインスタンスが割り当てられた場合、ループを終了
+                // 全てのタンクにインスタンスが割り当てられた場合、ループを終了
                 if (m_Tanks.TrueForAll(t => t.m_Instance != null))
                 {
                     Debug.Log("All tanks have been assigned successfully.");
                     break;
                 }
 
-                // デバッグログとリトライ間隔を追加
                 Debug.Log("Not all tanks are assigned. Retrying...");
                 yield return new WaitForSeconds(0.5f);
             }
 
-            // カメラターゲットが設定されていない場合、再度チェック
-            TankManager finalMyTank = m_Tanks.FirstOrDefault(t => t.m_Instance != null && t.m_Instance.GetComponent<PhotonView>().IsMine);
-            if (finalMyTank != null)
+            // 自分のタンクをカメラのターゲットに設定
+            TankManager myTank = m_Tanks.FirstOrDefault(t => t.m_Instance != null && t.m_ActorNumber == PhotonNetwork.LocalPlayer.ActorNumber);
+            if (myTank != null)
             {
-                m_CameraControl.SetTarget(finalMyTank.m_Instance.transform);
-                Debug.Log("Camera target set to my tank after retry.");
+                m_CameraControl.SetTarget(myTank.m_Instance.transform);
+                Debug.Log("Camera target set to my tank.");
             }
             else
             {
@@ -301,10 +330,7 @@ namespace Complete
 
 
 
-
-
-
-        private void SetCameraTargets()
+        /* private void SetCameraTargets()
         {
             Transform[] targets = new Transform[m_Tanks.Count];
             for (int i = 0; i < m_Tanks.Count; i++)
@@ -317,7 +343,7 @@ namespace Complete
 
             m_CameraControl.m_Targets = targets;
         }
-
+        */
 
         private void SetGameState(GameState newState)
         {
@@ -326,10 +352,8 @@ namespace Complete
 
             CurrentGameState = newState;
 
-            if (GameStateChanged != null)
-            {
-                GameStateChanged.Invoke(newState);
-            }
+            GameStateChanged.Invoke(newState);
+
 
             if (PhotonNetwork.IsMasterClient)
             {
