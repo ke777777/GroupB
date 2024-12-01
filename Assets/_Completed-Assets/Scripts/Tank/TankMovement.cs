@@ -36,7 +36,6 @@ namespace Complete
         private void Awake()
         {
             m_Rigidbody = GetComponent<Rigidbody>();
-            isMine = photonView.IsMine;
 
             if (photonView.InstantiationData != null && photonView.InstantiationData.Length > 0)
             {
@@ -90,6 +89,7 @@ namespace Complete
 
         private void Start()
         {
+            isMine = photonView.IsMine;
             m_MovementAxisName = "Vertical" + m_PlayerNumber;
             m_TurnAxisName = "Horizontal" + m_PlayerNumber;
             // Initialize the turret turn axis name based on player number
