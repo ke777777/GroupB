@@ -1,40 +1,60 @@
 using UnityEngine;
 using System.Collections;
+using Photon.Pun;
+using Complete;
 
-public class Cartridge : MonoBehaviour
+namespace Complete
 {
-    public float blinkDuration = 3.0f; // 明滅する合計時間
-    public float blinkInterval = 0.2f; // 明滅の間隔
-
-    private Renderer cartridgeRenderer;
-
-    private void Start()
+    public class Cartridge : MonoBehaviourPun
     {
-        // Rendererコンポーネントを取得
-        cartridgeRenderer = GetComponent<Renderer>();
+        public float blinkDuration = 3.0f; // 明滅する合計時間
+        public float blinkInterval = 0.2f; // 明滅の間隔
 
-        // 明滅を開始
-        StartCoroutine(BlinkAndDestroy());
-    }
+        [SerializeField] public CartridgeData cartridgeData;
 
-    private IEnumerator BlinkAndDestroy()
-    {
-        float elapsedTime = 0f;
+        private Renderer cartridgeRenderer;
 
-        // 明滅の合計時間が経過するまでループ
-        while (elapsedTime < blinkDuration)
+        private void Start()
         {
-            // Rendererの有効・無効化を切り替え
-            cartridgeRenderer.enabled = !cartridgeRenderer.enabled;
+            // Rendererコンポーネントを取得
+            cartridgeRenderer = GetComponent<Renderer>();
 
-            // 次の明滅まで待機
-            yield return new WaitForSeconds(blinkInterval);
-
-            // 経過時間を更新
-            elapsedTime += blinkInterval;
+            // 明滅を開始
+            StartCoroutine(BlinkAndDestroy());
         }
 
-        // カートリッジを消滅
-        Destroy(gameObject);
+        private IEnumerator BlinkAndDestroy()
+        {
+            float elapsedTime = 0f;
+
+            // 明滅の合計時間が経過するまでループ
+            while (elapsedTime < blinkDuration)
+            {
+                // Rendererの有効・無効化を切り替え
+                cartridgeRenderer.enabled = !cartridgeRenderer.enabled;
+
+                // 次の明滅まで待機
+                yield return new WaitForSeconds(blinkInterval);
+
+                // 経過時間を更新
+                elapsedTime += blinkInterval;
+            }
+
+            // カートリッジを消滅
+            Destroy(gameObject);
+        }
+        private void OnTriggerEnter(Collider other)
+        {
+            if (other.CompareTag("Player"))
+            {
+                TankShooting tankShooting = other.GetComponent<TankShooting>();
+                if (tankShooting != null && tankShooting.photonView.IsMine)
+                {
+                    tankShooting.GainingWeaponNumber(cartridgeData.weaponType);
+                    PhotonNetwork.Destroy(gameObject);
+                }
+            }
+        }
+
     }
 }

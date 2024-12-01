@@ -1,11 +1,12 @@
 using UnityEngine;
-
+using System.Collections;
+using System.Linq;
+using Photon.Pun;
 namespace Complete
 {
     public class HudManager : MonoBehaviour
     {
-        [SerializeField] private PlayerStockArea player1StockArea;
-        [SerializeField] private PlayerStockArea player2StockArea;
+        [SerializeField] private PlayerStockArea playerStockArea;
         [SerializeField] private GameManager gameManager;
 
         private void OnEnable()
@@ -14,10 +15,21 @@ namespace Complete
             {
                 gameManager.GameStateChanged += HandleGameStateChanged;
 
-                foreach (var tank in gameManager.m_Tanks)
+                StartCoroutine(SubscribeToLocalTank());
+            }
+        }
+        private IEnumerator SubscribeToLocalTank()
+        {
+            while (true)
+            {
+                var localTank = gameManager.m_Tanks.FirstOrDefault(t => t.m_Instance != null && t.m_Instance.GetComponent<PhotonView>().IsMine);
+                if (localTank != null)
                 {
-                    tank.WeaponStockChanged += HandleWeaponStockChanged;
+                    localTank.WeaponStockChanged += HandleWeaponStockChanged;
+                    break;
                 }
+
+                yield return new WaitForSeconds(0.5f);
             }
         }
 
@@ -26,10 +38,10 @@ namespace Complete
             if (gameManager != null)
             {
                 gameManager.GameStateChanged -= HandleGameStateChanged;
-
-                foreach (var tank in gameManager.m_Tanks)
+                var localTank = gameManager.m_Tanks.FirstOrDefault(t => t.m_Instance != null && t.m_Instance.GetComponent<PhotonView>().IsMine);
+                if (localTank != null)
                 {
-                    tank.WeaponStockChanged -= HandleWeaponStockChanged;
+                    localTank.WeaponStockChanged -= HandleWeaponStockChanged;
                 }
             }
         }
@@ -37,21 +49,11 @@ namespace Complete
         private void HandleGameStateChanged(GameManager.GameState newState)
         {
             bool isGameActive = (newState == GameManager.GameState.RoundPlaying);
-
-            player1StockArea.gameObject.SetActive(isGameActive);
-            player2StockArea.gameObject.SetActive(isGameActive);
+            playerStockArea.gameObject.SetActive(isGameActive);
         }
-
         private void HandleWeaponStockChanged(int playerNumber, string weaponName, int currentStock)
         {
-            if (playerNumber == 1)
-            {
-                player1StockArea.UpdatePlayerStockArea(weaponName, currentStock);
-            }
-            else if (playerNumber == 2)
-            {
-                player2StockArea.UpdatePlayerStockArea(weaponName, currentStock);
-            }
+            playerStockArea.UpdatePlayerStockArea(weaponName, currentStock);
         }
     }
 }

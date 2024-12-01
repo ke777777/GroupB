@@ -2,7 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-[System.Serializable] public class WeaponStockData
+[System.Serializable]
+public class WeaponStockData
 {
     private int initialWeaponNumber;
     private int maxWeaponNumber;
@@ -23,10 +24,10 @@ using UnityEngine;
         currentWeaponNumber = initialWeaponNumber;
     }
 
-    public void GainingWeaponNunber()
+    public void GainingWeaponNumber()
     {
         currentWeaponNumber += gainWeaponNumber;
-        if(currentWeaponNumber > maxWeaponNumber)
+        if (currentWeaponNumber > maxWeaponNumber)
         {
             currentWeaponNumber = maxWeaponNumber;
         }
@@ -34,9 +35,14 @@ using UnityEngine;
 
     public void DecrementWeaponNumber()
     {
-        if(currentWeaponNumber > 0)
+        if (currentWeaponNumber > 0)
         {
             currentWeaponNumber--;
         }
     }
+    public void SetWeaponNumber(int weaponNumber)
+    {
+        currentWeaponNumber = weaponNumber;
+    }
+
 }

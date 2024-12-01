@@ -491,25 +491,28 @@ namespace Complete
 
         public void IncrementWinCount(int playerNumber)
         {
-            if (PhotonNetwork.IsMasterClient) // マスタークライアントのみが勝利数を更新
+            foreach (var tank in m_Tanks)
             {
-                foreach (var tank in m_Tanks)
+                if (tank.m_PlayerNumber == playerNumber)
                 {
-                    if (tank.m_PlayerNumber == playerNumber)
-                    {
-                        tank.m_Wins++;
-                        photonView.RPC(nameof(UpdateWinCounts), RpcTarget.Others, playerNumber, tank.m_Wins);
-                        break;
-                    }
-                }
-
-                if (CountWinsManager.Instance != null)
-                {
-                    CountWinsManager.Instance.UpdateWinStars(); // マスタークライアント側でも表示を更新
+                    tank.m_Wins++;
+                    break;
                 }
             }
-        }
 
+            // 全クライアントに勝利数の更新を通知
+            photonView.RPC(nameof(UpdateWinCounts), RpcTarget.All, playerNumber, GetTankWins(playerNumber));
+
+            if (CountWinsManager.Instance != null)
+            {
+                CountWinsManager.Instance.UpdateWinStars();
+            }
+        }
+        private int GetTankWins(int playerNumber)
+        {
+            var tank = m_Tanks.FirstOrDefault(t => t.m_PlayerNumber == playerNumber);
+            return tank != null ? tank.m_Wins : 0;
+        }
 
         // This is used to check if there is one or fewer tanks remaining and thus the round should end.
         private bool OneTankLeft()

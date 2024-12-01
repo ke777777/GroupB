@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
+using System.Linq;
+using Photon.Pun;
 
 namespace Complete
 {
@@ -88,6 +90,8 @@ namespace Complete
 
             if (playerNumber == 1 && player1HealthSlider != null)
             {
+
+                player1HealthSlider.maxValue = maxHealth;
                 player1HealthSlider.value = currentHealth;
 
                 if (player1FillImage != null)
@@ -98,6 +102,7 @@ namespace Complete
             }
             else if (playerNumber == 2 && player2HealthSlider != null)
             {
+                player2HealthSlider.maxValue = maxHealth;
                 player2HealthSlider.value = currentHealth;
 
                 if (player2FillImage != null)

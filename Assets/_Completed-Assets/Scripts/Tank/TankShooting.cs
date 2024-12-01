@@ -149,5 +149,31 @@ namespace Complete
 
             MinePlaced?.Invoke();
         }
+        public void GainingWeaponNumber(string weaponName)
+        {
+            if (weaponStockDictionary.ContainsKey(weaponName))
+            {
+                weaponStockDictionary[weaponName].GainingWeaponNumber();
+                WeaponStockChanged?.Invoke(weaponName, weaponStockDictionary[weaponName].CurrentWeaponNumber);
+
+                // 全クライアントにストック数の更新を通知
+                photonView.RPC("UpdateWeaponStock", RpcTarget.Others, weaponName, weaponStockDictionary[weaponName].CurrentWeaponNumber);
+            }
+            else
+            {
+                Debug.LogWarning($"Weapon '{weaponName}' not found in stock dictionary.");
+            }
+        }
+
+        [PunRPC]
+        public void UpdateWeaponStock(string weaponName, int currentStock)
+        {
+            if (weaponStockDictionary.ContainsKey(weaponName))
+            {
+                weaponStockDictionary[weaponName].SetWeaponNumber(currentStock);
+                WeaponStockChanged?.Invoke(weaponName, currentStock);
+            }
+        }
+
     }
 }
