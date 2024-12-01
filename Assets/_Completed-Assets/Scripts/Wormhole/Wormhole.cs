@@ -31,7 +31,7 @@ public class Wormhole : MonoBehaviourPun
     }
 
     [PunRPC]
-    private void StartTeleport(int tankViewID)
+    public void StartTeleport(int tankViewID)
     {
         var tankPhotonView = PhotonView.Find(tankViewID);
         if (tankPhotonView != null)

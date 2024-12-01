@@ -5,7 +5,7 @@ public class MiniMapFollowPlayer : MonoBehaviour
 {
     private Transform playerTransform; // プレイヤーのTransform
     private bool isPlayerFound = false; // プレイヤーが見つかったかどうかのフラグ
-    public float retryInterval = 0.5f; // プレイヤーを再検索する間隔
+
 
     private void Start()
     {
@@ -53,7 +53,7 @@ public class MiniMapFollowPlayer : MonoBehaviour
 
             // プレイヤーが見つからなかった場合、再試行
             Debug.LogWarning("Local player not found. Retrying...");
-            yield return new WaitForSeconds(retryInterval);
+            yield return new WaitForSeconds(0.5f);
         }
 
         // 再試行が終了してもプレイヤーが見つからなかった場合のフォールバック
