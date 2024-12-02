@@ -255,15 +255,17 @@ namespace Complete
         {
             if (stream.IsWriting)
             {
-                stream.SendNext(m_MovementInputValue);
-                stream.SendNext(m_TurnInputValue);
+                //stream.SendNext(m_MovementInputValue);
+                //stream.SendNext(m_TurnInputValue);
+                stream.SendNext(m_Rigidbody.position); // Vector3
+                stream.SendNext(m_Rigidbody.rotation);
                 stream.SendNext(isInvincible);
                 stream.SendNext(m_TurretTransform.localRotation);
             }
             else
             {
-                m_MovementInputValue = (float)stream.ReceiveNext();
-                m_TurnInputValue = (float)stream.ReceiveNext();
+                //m_MovementInputValue = (float)stream.ReceiveNext();
+                //m_TurnInputValue = (float)stream.ReceiveNext();
                 Vector3 receivedPosition = (Vector3)stream.ReceiveNext();
                 Quaternion receivedRotation = (Quaternion)stream.ReceiveNext();
                 m_Rigidbody.position = Vector3.Lerp(m_Rigidbody.position, receivedPosition, Time.deltaTime * 5);
