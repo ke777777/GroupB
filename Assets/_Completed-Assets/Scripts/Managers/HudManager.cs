@@ -28,7 +28,7 @@ namespace Complete
             while (true)
             {
                 var localTank = gameManager.m_Tanks.FirstOrDefault(t => t.m_Instance != null && t.m_Instance.GetComponent<PhotonView>().IsMine);
-                if (localTank != null)
+                if (localTank != null && localTank.m_PlayerNumber > 0)
                 {
                     myPlayerNumber = localTank.m_PlayerNumber;
                     localTank.WeaponStockChanged += HandleWeaponStockChanged;
