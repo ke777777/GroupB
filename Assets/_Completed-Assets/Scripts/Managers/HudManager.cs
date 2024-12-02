@@ -50,6 +50,8 @@ namespace Complete
             // プレイヤーナンバーをHUDに表示
             UpdatePlayerNumbers();
 
+            myTank.WeaponStockChanged += HandleWeaponStockChanged;
+
             // TankShootingから現在の武器所持数を取得してUIを更新
             var tankShooting = myTank.m_Instance.GetComponent<TankShooting>();
             if (tankShooting != null)

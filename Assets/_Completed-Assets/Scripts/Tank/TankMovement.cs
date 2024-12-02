@@ -33,15 +33,6 @@ namespace Complete
         public bool isCooldown = false; // クールダウン判定
         public delegate void InvincibilityChanged(bool state);
         public event InvincibilityChanged OnInvincibilityChanged;
-        [SerializeField] private float snapDistanceThreshold = 2f; // スナップする距離の閾値
-        [SerializeField] private float interpolationSpeed = 15f;  // 補間の速度
-        [SerializeField] private float extrapolationLimit = 0.2f; // 外挿の時間制限（秒）
-
-        private Vector3 targetPosition;
-        private Quaternion targetRotation;
-        private Vector3 velocity;             // 予測のための速度
-        private float lastSyncTime;           // 最後に同期された時間
-        private float syncDelay;              // 前回の同期からの遅延時間
 
         private void Awake()
         {
@@ -122,34 +113,6 @@ namespace Complete
             Move();
             Turn();
             TurretTurn();
-            if (!photonView.IsMine)
-            {
-                float timeSinceLastSync = Time.time - lastSyncTime;
-
-                if (timeSinceLastSync < extrapolationLimit)
-                {
-                    // 外挿（現在の位置を予測）
-                    Vector3 extrapolatedPosition = targetPosition + velocity * timeSinceLastSync;
-
-                    // スナップするか補間するか
-                    if (Vector3.Distance(m_Rigidbody.position, extrapolatedPosition) > snapDistanceThreshold)
-                    {
-                        m_Rigidbody.position = extrapolatedPosition; // 大きくずれている場合はスナップ
-                    }
-                    else
-                    {
-                        m_Rigidbody.position = Vector3.Lerp(m_Rigidbody.position, extrapolatedPosition, Time.fixedDeltaTime * interpolationSpeed); // 小さなズレは補間
-                    }
-                }
-                else
-                {
-                    // 外挿時間を超えた場合、目標位置に近づける
-                    m_Rigidbody.position = Vector3.Lerp(m_Rigidbody.position, targetPosition, Time.fixedDeltaTime * interpolationSpeed);
-                }
-
-                // 回転も補間
-                m_Rigidbody.rotation = Quaternion.Lerp(m_Rigidbody.rotation, targetRotation, Time.fixedDeltaTime * interpolationSpeed);
-            }
         }
 
         public void DisableActions()
@@ -309,14 +272,6 @@ namespace Complete
                 m_Rigidbody.rotation = Quaternion.Lerp(m_Rigidbody.rotation, receivedRotation, Time.deltaTime * 5);
                 isInvincible = (bool)stream.ReceiveNext();
                 m_TurretTransform.localRotation = (Quaternion)stream.ReceiveNext();
-
-                syncDelay = (float)(PhotonNetwork.Time - info.SentServerTime);
-                velocity = (receivedPosition - targetPosition) / syncDelay;
-
-                targetPosition = receivedPosition;
-                targetRotation = receivedRotation;
-
-                lastSyncTime = Time.time; // 最後の同期時刻を記録
             }
         }
     }
