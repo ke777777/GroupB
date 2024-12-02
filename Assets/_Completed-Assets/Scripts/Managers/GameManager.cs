@@ -104,8 +104,8 @@ namespace Complete
                 }
             }
 
-            InitializeTanks();
-            SpawnMyTank(); // 各クライアントが自分のタンクを生成
+            //InitializeTanks();
+            //SpawnMyTank(); // 各クライアントが自分のタンクを生成
             yield return StartCoroutine(FindAndAssignTanks());
             StartCoroutine(GameLoop());
         }

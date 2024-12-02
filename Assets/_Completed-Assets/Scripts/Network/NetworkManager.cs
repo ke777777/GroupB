@@ -18,7 +18,7 @@ public class NetworkManager : MonoBehaviourPunCallbacks
     public Button[] stampButtons;       // スタンプボタンリスト
 
     private GameObject currentStamp;    // 現在表示中のスタンプ
-    private bool isStampActive = false; // 現在スタンプがアクティブかどうか（連打防止用）
+    public bool isStampActive = false; // 現在スタンプがアクティブかどうか（連打防止用）
 
     void Start()
     {
