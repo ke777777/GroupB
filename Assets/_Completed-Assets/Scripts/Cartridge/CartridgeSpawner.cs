@@ -29,14 +29,14 @@ namespace Complete
             if (prefab != null)
             {
                 GameObject cartridge = PhotonNetwork.Instantiate(prefab.name, randomPosition, Quaternion.identity);
-                if (cartridge != null)
+                /*if (cartridge != null)
                 {
                     Debug.Log($"Instantiated cartridge prefab '{prefab.name}' at position {randomPosition}");
                 }
                 else
                 {
                     Debug.LogError($"Failed to instantiate cartridge prefab '{prefab.name}'");
-                }
+                }*/
             }
             else
             {

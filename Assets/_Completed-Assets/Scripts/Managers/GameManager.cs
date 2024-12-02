@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Photon.Pun;
 using Photon.Realtime;
+using PhotonHashtable = ExitGames.Client.Photon.Hashtable;
+
 
 namespace Complete
 {
@@ -54,22 +56,19 @@ namespace Complete
                 StartCoroutine(WaitForPlayerNumbersAndInitialize());
             }
         }
-        // プレイヤー番号をマスタークライアントで割り当て、全クライアントで共有
+
         private void AssignPlayerNumbers()
         {
-            if (PhotonNetwork.IsMasterClient)
-            {
-                int playerNumber = 1;
-                foreach (var player in PhotonNetwork.PlayerList)
-                {
-                    ExitGames.Client.Photon.Hashtable props = new ExitGames.Client.Photon.Hashtable
-                    {
-                        { "PlayerNumber", playerNumber }
-                    };
-                    player.SetCustomProperties(props);
-                    playerNumber++;
-                }
-            }
+            // 現在のプレイヤー数に基づいて番号を割り当て（例: 1, 2）
+            int playerNumber = PhotonNetwork.CurrentRoom.PlayerCount;
+
+            PhotonHashtable props = new PhotonHashtable
+    {
+        { "PlayerNumber", playerNumber }
+    };
+            PhotonNetwork.LocalPlayer.SetCustomProperties(props);
+
+            Debug.Log($"Assigned PlayerNumber: {playerNumber}");
         }
 
         // 全てのプレイヤーがプレイヤー番号を受け取るのを待つ
