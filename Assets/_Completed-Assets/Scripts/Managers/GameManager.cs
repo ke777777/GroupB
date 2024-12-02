@@ -417,6 +417,20 @@ namespace Complete
             PhotonNetwork.LoadLevel(SceneNames.TitleScene);
         }
 
+        private void ResetTankHealth()
+        {
+            foreach (var tank in m_Tanks)
+            {
+                if (tank.m_Instance != null)
+                {
+                    var tankHealth = tank.m_Instance.GetComponent<TankHealth>();
+                    if (tankHealth != null)
+                    {
+                        tankHealth.ResetHealth();
+                    }
+                }
+            }
+        }
         // This is called from start and will run each phase of the game one after another.
         private IEnumerator GameLoop()
         {
@@ -450,6 +464,7 @@ namespace Complete
             SetGameState(GameState.RoundStarting);
             // As soon as the round starts reset the tanks and make sure they can't move.
             ResetAllTanks();
+            ResetTankHealth();
             DisableTankControl();
 
             // Snap the camera's zoom and position to something appropriate for the reset tanks.

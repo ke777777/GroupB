@@ -103,6 +103,14 @@ namespace Complete
             }
         }
 
+        public void ResetHealth()
+        {
+            m_CurrentHealth = m_StartingHealth;
+            m_Dead = false;
+            SetHealthUI();
+            NotifyHealthChange();
+        }
+
         /* private void OnDeath()
         {
             if (!photonView.IsMine) return;
