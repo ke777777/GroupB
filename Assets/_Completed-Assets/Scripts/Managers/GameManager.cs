@@ -71,6 +71,17 @@ namespace Complete
                 }
             }
         }
+        public override void OnPlayerPropertiesUpdate(Player targetPlayer, ExitGames.Client.Photon.Hashtable changedProps)
+        {
+            base.OnPlayerPropertiesUpdate(targetPlayer, changedProps);
+            if (changedProps.ContainsKey("PlayerNumber"))
+            {
+                // プレイヤー番号が更新された際の処理
+                InitializeTanks();
+                SpawnMyTank();
+                StartCoroutine(FindAndAssignTanks());
+            }
+        }
 
         // 全てのプレイヤーがプレイヤー番号を受け取るのを待つ
         private IEnumerator WaitForPlayerNumbersAndInitialize()
@@ -525,6 +536,7 @@ namespace Complete
         [PunRPC]
         private void UpdateWinCounts(int playerNumber, int wins)
         {
+            Debug.Log($"RPC received: UpdateWinCounts for Player {playerNumber} with Wins {wins}");
             foreach (var tank in m_Tanks)
             {
                 if (tank.m_PlayerNumber == playerNumber)
@@ -563,6 +575,7 @@ namespace Complete
                 CountWinsManager.Instance.UpdateWinStars();
             }
         }
+
         private int GetTankWins(int playerNumber)
         {
             var tank = m_Tanks.FirstOrDefault(t => t.m_PlayerNumber == playerNumber);
