@@ -262,8 +262,8 @@ namespace Complete
             }
             else
             {
-                //m_MovementInputValue = (float)stream.ReceiveNext();
-                //m_TurnInputValue = (float)stream.ReceiveNext();
+                m_MovementInputValue = (float)stream.ReceiveNext();
+                m_TurnInputValue = (float)stream.ReceiveNext();
                 Vector3 receivedPosition = (Vector3)stream.ReceiveNext();
                 Quaternion receivedRotation = (Quaternion)stream.ReceiveNext();
                 m_Rigidbody.position = Vector3.Lerp(m_Rigidbody.position, receivedPosition, Time.deltaTime * 5);
