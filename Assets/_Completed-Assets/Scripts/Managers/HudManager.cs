@@ -25,42 +25,66 @@ namespace Complete
         }
         private IEnumerator SubscribeToLocalTank()
         {
-            while (true)
+            // ローカルタンクの初期化が完了するまで待つ
+            TankManager myTank = null;
+            while (myTank == null || myTank.m_Instance == null)
             {
-                var localTank = gameManager.m_Tanks.FirstOrDefault(t => t.m_Instance != null && t.m_Instance.GetComponent<PhotonView>().IsMine);
-                if (localTank != null && localTank.m_PlayerNumber > 0)
-                {
-                    myPlayerNumber = localTank.m_PlayerNumber;
-                    localTank.WeaponStockChanged += HandleWeaponStockChanged;
-
-                    // 相手のタンクを取得
-                    var opponentTank = gameManager.m_Tanks.FirstOrDefault(t => t.m_PlayerNumber != myPlayerNumber && t.m_Instance != null);
-                    if (opponentTank != null)
-                    {
-                        opponentPlayerNumber = opponentTank.m_PlayerNumber;
-                    }
-
-                    // プレイヤーナンバーをHUDに表示
-                    UpdatePlayerNumbers();
-
-                    // TankShootingから現在の武器所持数を取得してUIを更新
-                    var tankShooting = localTank.m_Instance.GetComponent<TankShooting>();
-                    if (tankShooting != null)
-                    {
-                        var weaponStocks = tankShooting.GetWeaponStocks();
-                        foreach (var weapon in weaponStocks)
-                        {
-                            HandleWeaponStockChanged(localTank.m_PlayerNumber, weapon.Key, weapon.Value.CurrentWeaponNumber);
-                        }
-                    }
-
-                    break;
-                }
-
-                yield return new WaitForSeconds(0.5f);
+                myTank = gameManager.m_Tanks.FirstOrDefault(t => t.m_Instance != null && t.m_Instance.GetComponent<PhotonView>().IsMine);
+                yield return new WaitForSeconds(0.1f);
             }
+
+            // ローカルプレイヤー番号を取得
+            myPlayerNumber = myTank.m_PlayerNumber;
+
+            // 相手タンクが初期化されるまで待つ
+            TankManager opponentTank = null;
+            while (opponentTank == null || opponentTank.m_Instance == null || opponentTank.m_PlayerNumber == 0)
+            {
+                opponentTank = gameManager.m_Tanks.FirstOrDefault(t => t.m_PlayerNumber != myPlayerNumber && t.m_Instance != null);
+                yield return new WaitForSeconds(0.1f);
+            }
+
+            opponentPlayerNumber = opponentTank.m_PlayerNumber;
+
+
+            // プレイヤーナンバーをHUDに表示
+            UpdatePlayerNumbers();
+
+            // TankShootingから現在の武器所持数を取得してUIを更新
+            var tankShooting = myTank.m_Instance.GetComponent<TankShooting>();
+            if (tankShooting != null)
+            {
+                var weaponStocks = tankShooting.GetWeaponStocks();
+                foreach (var weapon in weaponStocks)
+                {
+                    HandleWeaponStockChanged(myTank.m_PlayerNumber, weapon.Key, weapon.Value.CurrentWeaponNumber);
+                }
+            }
+            myTank.WeaponStockChanged += HandleWeaponStockChanged;
         }
 
+
+        private IEnumerator WaitForPlayerNumbers()
+        {
+            while (PhotonNetwork.PlayerList.All(p => !p.CustomProperties.ContainsKey("PlayerNumber")))
+            {
+                yield return new WaitForSeconds(0.1f);
+            }
+
+            var myTank = gameManager.m_Tanks.FirstOrDefault(t => t.m_Instance != null && t.m_Instance.GetComponent<PhotonView>().IsMine);
+            if (myTank != null)
+            {
+                myPlayerNumber = myTank.m_PlayerNumber;
+            }
+
+            var opponentTank = gameManager.m_Tanks.FirstOrDefault(t => t.m_PlayerNumber != myPlayerNumber && t.m_Instance != null);
+            if (opponentTank != null)
+            {
+                opponentPlayerNumber = opponentTank.m_PlayerNumber;
+            }
+
+            UpdatePlayerNumbers();
+        }
         private void UpdatePlayerNumbers()
         {
             // 自分のプレイヤーナンバーを左側に表示
