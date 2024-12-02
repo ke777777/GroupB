@@ -264,10 +264,6 @@ namespace Complete
             {
                 m_MovementInputValue = (float)stream.ReceiveNext();
                 m_TurnInputValue = (float)stream.ReceiveNext();
-                Vector3 receivedPosition = (Vector3)stream.ReceiveNext();
-                Quaternion receivedRotation = (Quaternion)stream.ReceiveNext();
-                m_Rigidbody.position = Vector3.Lerp(m_Rigidbody.position, receivedPosition, Time.deltaTime * 5);
-                m_Rigidbody.rotation = Quaternion.Lerp(m_Rigidbody.rotation, receivedRotation, Time.deltaTime * 5);
                 isInvincible = (bool)stream.ReceiveNext();
                 m_TurretTransform.localRotation = (Quaternion)stream.ReceiveNext();
             }
