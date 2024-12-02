@@ -34,7 +34,10 @@ namespace Complete
         public delegate void InvincibilityChanged(bool state);
         public event InvincibilityChanged OnInvincibilityChanged;
         [SerializeField] private float snapDistanceThreshold = 2f; // スナップする距離の閾値
-        [SerializeField] private float interpolationSpeed = 10f;  // 補間の速度
+        [SerializeField] private float interpolationSpeed = 15f;  // 補間の速度
+
+        private Vector3 targetPosition;
+        private Quaternion targetRotation;
         private void Awake()
         {
             m_Rigidbody = GetComponent<Rigidbody>();
@@ -114,6 +117,11 @@ namespace Complete
             Move();
             Turn();
             TurretTurn();
+            if (!photonView.IsMine)
+            {
+                m_Rigidbody.position = Vector3.Lerp(m_Rigidbody.position, targetPosition, Time.fixedDeltaTime * interpolationSpeed);
+                m_Rigidbody.rotation = Quaternion.Lerp(m_Rigidbody.rotation, targetRotation, Time.fixedDeltaTime * interpolationSpeed);
+            }
         }
 
         public void DisableActions()
@@ -274,16 +282,17 @@ namespace Complete
                 isInvincible = (bool)stream.ReceiveNext();
                 m_TurretTransform.localRotation = (Quaternion)stream.ReceiveNext();
 
-                float distance = Vector3.Distance(m_Rigidbody.position, receivedPosition);
-                if (distance > snapDistanceThreshold)
+                if (Vector3.Distance(m_Rigidbody.position, receivedPosition) > snapDistanceThreshold)
                 {
                     m_Rigidbody.position = receivedPosition;
+                    targetPosition = receivedPosition; // 目標位置を更新
                 }
                 else
                 {
-                    m_Rigidbody.position = Vector3.Lerp(m_Rigidbody.position, receivedPosition, Time.deltaTime * interpolationSpeed);
+                    targetPosition = receivedPosition;
                 }
-                m_Rigidbody.rotation = Quaternion.Lerp(m_Rigidbody.rotation, receivedRotation, Time.deltaTime * interpolationSpeed);
+
+                targetRotation = receivedRotation; // 目標回転を更新
             }
         }
     }
