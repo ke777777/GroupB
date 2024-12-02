@@ -113,11 +113,12 @@ namespace Complete
                     m_PlayerNumber = playerNumber,
                     m_PlayerColor = GetPlayerColor(playerNumber),
                     m_SpawnPoint = GetSpawnPoint(playerNumber),
-                    m_ActorNumber = actorNumber
+                    m_ActorNumber = actorNumber,
+                    m_Wins = 0
                 };
+                Debug.Log($"Player {playerNumber} wins initialized to {tankManager.m_Wins}"); // ‰Šú‰»Šm”FƒƒO
                 m_Tanks.Add(tankManager);
             }
-
             Debug.Log($"Initialized {m_Tanks.Count} TankManagers.");
         }
 
