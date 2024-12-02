@@ -512,7 +512,12 @@ namespace Complete
             {
                 if (m_RoundWinner != null)
                 {
+                    Debug.Log($"Round winner is Player {m_RoundWinner.m_PlayerNumber}");
                     IncrementWinCount(m_RoundWinner.m_PlayerNumber); // Ÿ—˜”‚ğ‘‰Á
+                }
+                else
+                {
+                    Debug.Log("No round winner detected.");
                 }
 
                 // Now the winner's score has been incremented, see if someone has one the game.
@@ -567,6 +572,7 @@ namespace Complete
                 if (tank.m_PlayerNumber == playerNumber)
                 {
                     tank.m_Wins++;
+                    Debug.Log($"Player {playerNumber} wins incremented to {tank.m_Wins}");
                     break;
                 }
             }
