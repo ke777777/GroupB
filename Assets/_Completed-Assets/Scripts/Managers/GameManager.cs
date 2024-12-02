@@ -71,17 +71,6 @@ namespace Complete
                 }
             }
         }
-        public override void OnPlayerPropertiesUpdate(Player targetPlayer, ExitGames.Client.Photon.Hashtable changedProps)
-        {
-            base.OnPlayerPropertiesUpdate(targetPlayer, changedProps);
-            if (changedProps.ContainsKey("PlayerNumber"))
-            {
-                // プレイヤー番号が更新された際の処理
-                InitializeTanks();
-                SpawnMyTank();
-                StartCoroutine(FindAndAssignTanks());
-            }
-        }
 
         // 全てのプレイヤーがプレイヤー番号を受け取るのを待つ
         private IEnumerator WaitForPlayerNumbersAndInitialize()
@@ -104,8 +93,8 @@ namespace Complete
                 }
             }
 
-            //InitializeTanks();
-            //SpawnMyTank(); // 各クライアントが自分のタンクを生成
+            InitializeTanks();
+            SpawnMyTank(); // 各クライアントが自分のタンクを生成
             yield return StartCoroutine(FindAndAssignTanks());
             StartCoroutine(GameLoop());
         }
