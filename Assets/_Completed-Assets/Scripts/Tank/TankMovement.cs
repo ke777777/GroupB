@@ -257,7 +257,7 @@ namespace Complete
             {
                 //stream.SendNext(m_MovementInputValue);
                 //stream.SendNext(m_TurnInputValue);
-                stream.SendNext(m_Rigidbody.position); // Vector3
+                stream.SendNext(m_Rigidbody.position);
                 stream.SendNext(m_Rigidbody.rotation);
                 stream.SendNext(isInvincible);
                 stream.SendNext(m_TurretTransform.localRotation);
