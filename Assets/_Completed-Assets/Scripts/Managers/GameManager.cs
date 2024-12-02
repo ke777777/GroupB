@@ -51,8 +51,8 @@ namespace Complete
             if (PhotonNetwork.InRoom)
             {
                 AssignPlayerNumbers(); // プレイヤー番号を割り当てる
-                StartCoroutine(WaitForPlayerNumbersAndInitialize());
             }
+            StartCoroutine(WaitForPlayerNumbersAndInitialize());
         }
         // プレイヤー番号をマスタークライアントで割り当て、全クライアントで共有
         private void AssignPlayerNumbers()
@@ -75,10 +75,9 @@ namespace Complete
         // 全てのプレイヤーがプレイヤー番号を受け取るのを待つ
         private IEnumerator WaitForPlayerNumbersAndInitialize()
         {
-            bool allPlayersHaveNumbers = false;
-            while (!allPlayersHaveNumbers)
+            while (true)
             {
-                allPlayersHaveNumbers = true;
+                bool allPlayersHaveNumbers = true;
                 foreach (var player in PhotonNetwork.PlayerList)
                 {
                     if (!player.CustomProperties.ContainsKey("PlayerNumber"))
@@ -87,12 +86,13 @@ namespace Complete
                         break;
                     }
                 }
-                if (!allPlayersHaveNumbers)
+                if (allPlayersHaveNumbers)
                 {
-                    yield return new WaitForSeconds(0.1f);
+                    Debug.Log("All players have received PlayerNumbers.");
+                    break;
                 }
+                yield return new WaitForSeconds(0.1f);
             }
-
             InitializeTanks();
             SpawnMyTank(); // 各クライアントが自分のタンクを生成
             yield return StartCoroutine(FindAndAssignTanks());
