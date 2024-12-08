@@ -93,20 +93,19 @@ public class PlayerStockArea : MonoBehaviour
     }
 
     // 砲弾ストックのUIを更新
-    private void UpdateShellStock(int stockPlace)
+    private void UpdateShellStock(int stockCount)
     {
-        int onesPlace;
-        int tensPlace;
+        int tensPlace = 0;
+        int onesPlace = 0;
 
-        if (stockPlace <= 10)
+        if (stockCount <= 10)
         {
-            tensPlace = 0;
-            onesPlace = stockPlace;
+            onesPlace = stockCount;
         }
         else
         {
-            tensPlace = (stockPlace - stockPlace % 10) / 10;
-            onesPlace = stockPlace % 10;
+            tensPlace = (stockCount - 1) / 10;
+            onesPlace = stockCount - tensPlace * 10;
         }
 
         // 10発アイコンの表示を更新
