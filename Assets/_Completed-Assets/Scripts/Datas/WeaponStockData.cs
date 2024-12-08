@@ -40,9 +40,9 @@ public class WeaponStockData
             currentWeaponNumber--;
         }
     }
-    public void SetWeaponNumber(int weaponNumber)
+    /*public void SetWeaponNumber(int weaponNumber)
     {
         currentWeaponNumber = weaponNumber;
-    }
+    }*/
 
 }

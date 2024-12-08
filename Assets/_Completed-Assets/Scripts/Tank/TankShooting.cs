@@ -166,8 +166,23 @@ namespace Complete
                 Debug.LogWarning($"Weapon '{weaponName}' not found in stock dictionary.");
             }
         }
+        private void OnCollisionEnter(Collision collision)
+        {
+            if (!photonView.IsMine) return; // 自分のタンク以外は処理しない
 
-        [PunRPC]
+            if (collision.gameObject.CompareTag("ShellCartridge"))
+            {
+                GainingWeaponNumber("Shell");
+                PhotonNetwork.Destroy(collision.gameObject); // カートリッジを削除
+            }
+            else if (collision.gameObject.CompareTag("MineCartridge"))
+            {
+                GainingWeaponNumber("Mine");
+                PhotonNetwork.Destroy(collision.gameObject); // カートリッジを削除
+            }
+        }
+
+        /*[PunRPC]
         public void UpdateWeaponStock(string weaponName, int currentStock)
         {
             if (weaponStockDictionary.ContainsKey(weaponName))
@@ -175,7 +190,7 @@ namespace Complete
                 weaponStockDictionary[weaponName].SetWeaponNumber(currentStock);
                 WeaponStockChanged?.Invoke(weaponName, currentStock);
             }
-        }
+        }*/
 
     }
 }
