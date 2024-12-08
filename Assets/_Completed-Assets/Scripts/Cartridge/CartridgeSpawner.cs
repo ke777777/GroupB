@@ -1,6 +1,6 @@
 using UnityEngine;
 using System.Collections;
-
+using Photon.Pun;
 
 namespace Complete
 {
@@ -9,7 +9,6 @@ namespace Complete
         [SerializeField] private CartridgeData cartridgeData;
         private GameManager gameManager;
         private Coroutine spawnCoroutine;
-
 
         public void SpawnCartridge(CartridgeData data)
         {
@@ -24,7 +23,25 @@ namespace Complete
                 1f,                      // Y座標（固定）
                 Random.Range(-40f, 40f)  // Z座標の範囲
             );
-            Instantiate(data.cartridgePrefab, randomPosition, Quaternion.identity);
+
+            GameObject prefab = Resources.Load<GameObject>(data.cartridgePrefab.name);
+
+            if (prefab != null)
+            {
+                GameObject cartridge = PhotonNetwork.Instantiate(prefab.name, randomPosition, Quaternion.identity);
+                /*if (cartridge != null)
+                {
+                    Debug.Log($"Instantiated cartridge prefab '{prefab.name}' at position {randomPosition}");
+                }
+                else
+                {
+                    Debug.LogError($"Failed to instantiate cartridge prefab '{prefab.name}'");
+                }*/
+            }
+            else
+            {
+                Debug.LogError($"Prefab '{data.cartridgePrefab.name}' not found in Resources.");
+            }
         }
 
         private void HandleGameStateChanged(GameManager.GameState newState)
@@ -46,13 +63,12 @@ namespace Complete
             }
         }
 
-        // 定期的にSpawnCartridgeを呼び出すコルーチン
         private IEnumerator SpawnRoutine(CartridgeData data)
         {
             while (true)
             {
                 SpawnCartridge(data);
-                yield return new WaitForSeconds(data.spawnFrequency); // CartridgeDataから頻度を取得
+                yield return new WaitForSeconds(data.spawnFrequency);
             }
         }
 
@@ -68,6 +84,10 @@ namespace Complete
             if (gameManager != null)
             {
                 gameManager.GameStateChanged += HandleGameStateChanged;
+            }
+            else
+            {
+                Debug.LogError("GameManagerが見つかりません。");
             }
         }
 

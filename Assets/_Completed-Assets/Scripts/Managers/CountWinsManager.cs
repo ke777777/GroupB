@@ -1,20 +1,23 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
+using System.Linq;
+using Photon.Pun;
 namespace Complete
 {
-    public class CountWins : MonoBehaviour
+    public class CountWinsManager : MonoBehaviour
     {
-        // ƒVƒ“ƒOƒ‹ƒgƒ“‚ÌƒCƒ“ƒXƒ^ƒ“ƒX
-        public static CountWins Instance { get; private set; }
+        public static CountWinsManager Instance { get; private set; }
 
         [SerializeField] private GameManager gameManager;
-        [SerializeField] private Image[] player1WinStars;
-        [SerializeField] private Image[] player2WinStars;
+        [SerializeField] private Image[] myWinStars;
+        [SerializeField] private Image[] opponentWinStars;
+        private int myPlayerNumber;
+        private int opponentPlayerNumber;
 
         private void Awake()
         {
-            // ƒVƒ“ƒOƒ‹ƒgƒ“‚Ìİ’è
+            // ã‚·ãƒ³ã‚°ãƒ«ãƒˆãƒ³ã®è¨­å®š
             if (Instance != null && Instance != this)
             {
                 Destroy(gameObject);
@@ -25,8 +28,43 @@ namespace Complete
 
         private void Start()
         {
-            InitializeStars(player1WinStars);
-            InitializeStars(player2WinStars);
+            InitializeStars(myWinStars);
+            InitializeStars(opponentWinStars);
+            StartCoroutine(WaitForGameManagerAndSetup());
+        }
+        private IEnumerator WaitForGameManagerAndSetup()
+        {
+            while (gameManager == null || gameManager.m_Tanks == null || gameManager.m_Tanks.Count == 0)
+            {
+                Debug.Log("Waiting for GameManager and Tanks to be initialized...");
+                yield return new WaitForSeconds(0.5f);
+            }
+
+            // è‡ªåˆ†ã¨ç›¸æ‰‹ã®ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ãƒŠãƒ³ãƒãƒ¼ã‚’å–å¾—
+            TankManager myTank = null;
+            while (myTank == null)
+            {
+                myTank = gameManager.m_Tanks.FirstOrDefault(t => t.m_Instance != null && t.m_Instance.GetComponent<PhotonView>().IsMine);
+                if (myTank == null)
+                {
+                    yield return new WaitForSeconds(0.5f);
+                }
+            }
+            myPlayerNumber = myTank.m_PlayerNumber;
+
+            TankManager opponentTank = gameManager.m_Tanks.FirstOrDefault(t => t.m_PlayerNumber != myPlayerNumber);
+            if (opponentTank != null)
+            {
+                opponentPlayerNumber = opponentTank.m_PlayerNumber;
+            }
+            else
+            {
+                Debug.LogError("Opponent tank not found.");
+                yield break;
+            }
+
+            // åˆæœŸçŠ¶æ…‹ã®å‹åˆ©æ•°ã‚’è¡¨ç¤º
+            UpdateWinStars();
         }
 
         private void InitializeStars(Image[] starImages)
@@ -42,16 +80,21 @@ namespace Complete
 
         public void UpdateWinStars()
         {
-
-            if (gameManager == null || gameManager.m_Tanks.Length < 2)
+            if (gameManager == null || gameManager.m_Tanks == null)
             {
+                Debug.LogWarning("GameManager or Tanks are not properly initialized.");
                 return;
             }
 
-            int player1Wins = gameManager.m_Tanks[0].m_Wins;
-            int player2Wins = gameManager.m_Tanks[1].m_Wins;
-            UpdateStars(player1WinStars, Mathf.Min(player1Wins, player1WinStars.Length));
-            UpdateStars(player2WinStars, Mathf.Min(player2Wins, player2WinStars.Length));
+            var myTank = gameManager.m_Tanks.FirstOrDefault(t => t.m_PlayerNumber == myPlayerNumber);
+            var opponentTank = gameManager.m_Tanks.FirstOrDefault(t => t.m_PlayerNumber != myPlayerNumber);
+
+            int myWins = myTank != null ? myTank.m_Wins : 0;
+            int opponentWins = opponentTank != null ? opponentTank.m_Wins : 0;
+
+            Debug.Log($"Updating win stars: My Wins = {myWins}, Opponent Wins = {opponentWins}");
+            UpdateStars(myWinStars, Mathf.Min(myWins, myWinStars.Length));
+            UpdateStars(opponentWinStars, Mathf.Min(opponentWins, opponentWinStars.Length));
         }
 
         private void UpdateStars(Image[] starImages, int winCount)
@@ -66,6 +109,21 @@ namespace Complete
                 {
                     Debug.LogWarning($"Star {i + 1} is null in the array.");
                 }
+            }
+        }
+        public void SetWinner(int winnerPlayerNumber)
+        {
+            if (winnerPlayerNumber == myPlayerNumber)
+            {
+                UpdateStars(myWinStars, myWinStars.Length); // å…¨ã¦ã®æ˜Ÿã‚’è¡¨ç¤º
+            }
+            else if (winnerPlayerNumber == opponentPlayerNumber)
+            {
+                UpdateStars(opponentWinStars, opponentWinStars.Length); // å…¨ã¦ã®æ˜Ÿã‚’è¡¨ç¤º
+            }
+            else
+            {
+                Debug.LogWarning("Invalid winnerPlayerNumber.");
             }
         }
     }

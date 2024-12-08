@@ -18,7 +18,7 @@ public class NetworkManager : MonoBehaviourPunCallbacks
     public Button[] stampButtons;       // スタンプボタンリスト
 
     private GameObject currentStamp;    // 現在表示中のスタンプ
-    private bool isStampActive = false; // 現在スタンプがアクティブかどうか（連打防止用）
+    public bool isStampActive = false; // 現在スタンプがアクティブかどうか（連打防止用）
 
     void Start()
     {
@@ -160,7 +160,14 @@ public class NetworkManager : MonoBehaviourPunCallbacks
         ReceiveStamp(stampIndex, PhotonNetwork.NickName);
 
         // 他のプレイヤーにも送信
-        photonView.RPC("ReceiveStamp", RpcTarget.Others, stampIndex, PhotonNetwork.NickName);
+        if (PhotonNetwork.InRoom)
+        {
+            photonView.RPC("ReceiveStamp", RpcTarget.Others, stampIndex, PhotonNetwork.NickName);
+        }
+        else
+        {
+            Debug.LogWarning("Cannot send RPC. Player is not in a room.");
+        }
     }
 
     // スタンプ受信処理
