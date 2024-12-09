@@ -96,6 +96,12 @@ namespace Complete
             InitializeTanks();
             SpawnMyTank(); // 各クライアントが自分のタンクを生成
             yield return StartCoroutine(FindAndAssignTanks());
+            while (CountWinsManager.Instance == null)
+            {
+                Debug.Log("Waiting for CountWinsManager to be initialized...");
+                yield return null;
+            }
+
             StartCoroutine(GameLoop());
         }
 
