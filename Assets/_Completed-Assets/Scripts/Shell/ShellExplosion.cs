@@ -32,6 +32,16 @@ namespace Complete
         {
             isDamageActive = true;
         }
+        private void HideMineFromOthers()
+        {
+            // Renderer‚ğ–³Œø‰»‚µ‚Ä‘¼ƒvƒŒƒCƒ„[‚É‚ÍŒ©‚¦‚È‚­‚·‚é
+            var renderers = GetComponentsInChildren<Renderer>();
+            foreach (var rend in renderers)
+            {
+                rend.enabled = false;
+            }
+        }
+
         private void OnTriggerEnter(Collider other)
         {
             if (isMine && !isDamageActive)
