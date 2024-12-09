@@ -416,7 +416,7 @@ namespace Complete
             // メッセージを設定
             if (m_GameWinner != null)
             {
-                m_MessageText.text = $"{m_GameWinner.m_ColoredPlayerText} is the winner as the opponent has left the game!";
+                m_MessageText.text = $"{m_GameWinner.m_ColoredPlayerText} is the winner because the opponent has left the game!";
             }
 
             // 一定時間待機してからタイトル画面に戻る
@@ -520,7 +520,13 @@ namespace Complete
                 // 勝利数を先にインクリメントし、その後少し待ってRPC反映を促す
                 IncrementWinCount(m_RoundWinner.m_PlayerNumber);
 
-                yield return new WaitForSeconds(0.1f);
+                photonView.RPC(nameof(ShowEndMessageRPC), RpcTarget.All);
+            }
+            else
+            {
+                // Get a message based on the scores and whether or not there is a game winner and display it.
+                string message = EndMessage();
+                m_MessageText.text = message;
             }
 
             if (CountWinsManager.Instance != null)
@@ -537,12 +543,16 @@ namespace Complete
                 PhotonNetwork.LoadLevel(SceneNames.TitleScene);
                 yield break;
             }
-            // Get a message based on the scores and whether or not there is a game winner and display it.
-            string message = EndMessage();
-            m_MessageText.text = message;
-
             // Wait for the specified length of time until yielding control back to the game loop.
             yield return m_EndWait;
+        }
+
+        [PunRPC]
+        private void ShowEndMessageRPC()
+        {
+            // ここで必ずUpdateWinCountsが処理済みになっているので、m_Winsは正しい値に更新されている
+            string message = EndMessage();
+            m_MessageText.text = message;
         }
         [PunRPC]
         private void UpdateWinCounts(int playerNumber, int wins)
