@@ -44,13 +44,12 @@ public class MiniMapMineIcon : MonoBehaviourPun
 
     private void AddSkullToMiniMap()
     {
-        // ミニマップに髑髏アイコンを追加
         skullIconInstance = Instantiate(skullIconPrefab, miniMapTransform);
 
-        // 初期位置を設定
+        skullIconInstance.layer = LayerMask.NameToLayer("MiniMap");
+
         UpdateIconPosition();
     }
-
     private void UpdateIconPosition()
     {
         // 地雷のワールド座標をスクリーン座標に変換
