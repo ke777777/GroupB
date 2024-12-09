@@ -1,39 +1,32 @@
 using UnityEngine;
 using Photon.Pun;
 
-public class MiniMapMine : MonoBehaviourPun
+public class MiniMapMineIcon : MonoBehaviourPun
 {
-    [SerializeField] private GameObject skullIconPrefab;
-    [SerializeField] private RectTransform miniMapTransform;
-    [SerializeField] private Transform miniMapCameraTransform;
-    private GameObject skullIconInstance;
-
+    [SerializeField] private GameObject skullIconPrefab; // ミニマップ用髑髏アイコンのプレハブ
+    [SerializeField] private RectTransform miniMapTransform; // ミニマップのUIキャンバスのRectTransform
+    [SerializeField] private Camera miniMapCamera; // ミニマップ用カメラ
+    private GameObject skullIconInstance; // 髑髏アイコンのインスタンス
     private void Start()
     {
-        if (miniMapTransform == null)
+        // MiniMapTransformを自動取得
+        Canvas miniMapCanvas = FindObjectOfType<Canvas>();
+        if (miniMapCanvas != null)
         {
-            // タグ "MiniMapCanvas" をミニマップ用の Canvas に設定しておく
-            GameObject miniMapCanvas = GameObject.FindWithTag("MiniMapCanvas");
-
-            if (miniMapCanvas != null)
-            {
-                miniMapTransform = miniMapCanvas.GetComponent<RectTransform>();
-            }
-            else
-            {
-                Debug.LogError("MiniMapCanvas not found! Please set the tag 'MiniMapCanvas' to the MiniMap Canvas object.");
-            }
+            miniMapTransform = miniMapCanvas.GetComponent<RectTransform>();
+        }
+        else
+        {
+            Debug.LogError("MiniMap Canvas not found!");
+            return;
         }
 
-        if (miniMapCameraTransform == null)
+        // MiniMapCameraを自動取得
+        miniMapCamera = GameObject.FindWithTag("MiniMapCamera")?.GetComponent<Camera>();
+        if (miniMapCamera == null)
         {
-            // タグ "MiniMapCamera" をミニマップカメラに設定しておく
-            miniMapCameraTransform = GameObject.FindWithTag("MiniMapCamera")?.transform;
-
-            if (miniMapCameraTransform == null)
-            {
-                Debug.LogError("MiniMapCamera not found! Please set the tag 'MiniMapCamera' to the MiniMap Camera object.");
-            }
+            Debug.LogError("MiniMap Camera not found!");
+            return;
         }
 
         if (photonView.IsMine)
@@ -41,10 +34,9 @@ public class MiniMapMine : MonoBehaviourPun
             AddSkullToMiniMap();
         }
     }
-
     private void Update()
     {
-        if (skullIconInstance != null && miniMapCameraTransform != null)
+        if (skullIconInstance != null && miniMapCamera != null)
         {
             UpdateIconPosition();
         }
@@ -61,19 +53,19 @@ public class MiniMapMine : MonoBehaviourPun
 
     private void UpdateIconPosition()
     {
-        // 地雷のワールド座標をミニマップのローカル座標に変換
-        Vector2 miniMapPosition = WorldToMiniMapPosition(transform.position);
-        skullIconInstance.GetComponent<RectTransform>().anchoredPosition = miniMapPosition;
-    }
+        // 地雷のワールド座標をスクリーン座標に変換
+        Vector3 screenPosition = miniMapCamera.WorldToScreenPoint(transform.position);
 
-    private Vector2 WorldToMiniMapPosition(Vector3 worldPosition)
-    {
-        // ワールド座標をミニマップのカメラビュー内にマッピング
-        Vector3 relativePosition = worldPosition - miniMapCameraTransform.position;
+        // スクリーン座標をミニマップのローカル座標に変換
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            miniMapTransform,
+            screenPosition,
+            miniMapCamera,
+            out Vector2 localPosition
+        );
 
-        float scale = 1f / miniMapCameraTransform.localScale.x;
-
-        return new Vector2(relativePosition.x * scale, relativePosition.z * scale);
+        // 髑髏アイコンの位置を更新
+        skullIconInstance.GetComponent<RectTransform>().anchoredPosition = localPosition;
     }
 
     private void OnDestroy()
