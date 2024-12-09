@@ -515,25 +515,20 @@ namespace Complete
 
             // See if there is a winner now the round is over.
             m_RoundWinner = GetRoundWinner();
-            if (PhotonNetwork.IsMasterClient)
+            if (PhotonNetwork.IsMasterClient && m_RoundWinner != null)
             {
-                if (m_RoundWinner != null)
-                {
-                    Debug.Log($"Round winner is Player {m_RoundWinner.m_PlayerNumber}");
-                    IncrementWinCount(m_RoundWinner.m_PlayerNumber); // 勝利数を増加
-                }
-                else
-                {
-                    Debug.Log("No round winner detected.");
-                }
+                // 勝利数を先にインクリメントし、その後少し待ってRPC反映を促す
+                IncrementWinCount(m_RoundWinner.m_PlayerNumber);
 
-                // Now the winner's score has been incremented, see if someone has one the game.
-                m_GameWinner = GetGameWinner();
+                yield return new WaitForSeconds(0.1f);
             }
+
             if (CountWinsManager.Instance != null)
             {
                 CountWinsManager.Instance.UpdateWinStars();
             }
+            // Now the winner's score has been incremented, see if someone has one the game.
+            m_GameWinner = GetGameWinner();
 
             if (m_GameWinner != null)
             {
