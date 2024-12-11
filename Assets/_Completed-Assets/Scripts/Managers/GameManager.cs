@@ -424,6 +424,26 @@ namespace Complete
             PhotonNetwork.LoadLevel(SceneNames.TitleScene);
         }
 
+        private void DestroyAllMines()
+        {
+            GameObject[] mines = GameObject.FindGameObjectsWithTag("Mine"); // 地雷をすべて取得
+
+            foreach (var mine in mines)
+            {
+                PhotonView minePhotonView = mine.GetComponent<PhotonView>();
+                if (minePhotonView != null && PhotonNetwork.IsMasterClient)
+                {
+                    PhotonNetwork.Destroy(mine); // マスタークライアントとして地雷を削除
+                }
+                else
+                {
+                    Destroy(mine); // ローカルで削除（PhotonViewがない場合など）
+                }
+            }
+
+            Debug.Log("All mines destroyed at the end of the round.");
+        }
+
         private void ResetTankHealth()
         {
             foreach (var tank in m_Tanks)
@@ -528,13 +548,14 @@ namespace Complete
                 string message = EndMessage();
                 m_MessageText.text = message;
             }
-
+            // Now the winner's score has been incremented, see if someone has one the game.
+            m_GameWinner = GetGameWinner();
             if (CountWinsManager.Instance != null)
             {
                 CountWinsManager.Instance.UpdateWinStars();
             }
-            // Now the winner's score has been incremented, see if someone has one the game.
-            m_GameWinner = GetGameWinner();
+
+            DestroyAllMines();
 
             if (m_GameWinner != null)
             {
