@@ -12,6 +12,10 @@ namespace Complete
 
         public void SpawnCartridge(CartridgeData data)
         {
+            if (!PhotonNetwork.IsMasterClient)
+            {
+                return;
+            }
             if (data.cartridgePrefab == null)
             {
                 Debug.LogError("cartridgePrefabがnullです。Instantiateできません。");
@@ -46,6 +50,9 @@ namespace Complete
 
         private void HandleGameStateChanged(GameManager.GameState newState)
         {
+            if (!PhotonNetwork.IsMasterClient)
+                return;
+
             if (newState == GameManager.GameState.RoundPlaying)
             {
                 if (spawnCoroutine == null)
@@ -79,6 +86,10 @@ namespace Complete
             if (gameManager != null)
             {
                 gameManager.GameStateChanged += HandleGameStateChanged;
+            }
+            if (!PhotonNetwork.IsMasterClient)
+            {
+                enabled = false; // マスタークライアント以外ではスクリプトを無効化
             }
         }
 

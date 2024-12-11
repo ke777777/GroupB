@@ -184,32 +184,26 @@ namespace Complete
 
         private void HandleCartridgeCollision(PhotonView targetView, string weaponType)
         {
-            if (targetView.IsMine)
-            {
-                GainingWeaponNumber(weaponType);
-                PhotonNetwork.Destroy(targetView.gameObject);
-            }
-            else if (PhotonNetwork.IsMasterClient)
-            {
-                PhotonNetwork.Destroy(targetView.gameObject);
+            GainingWeaponNumber(weaponType);
 
+            // マスタークライアントに削除を依頼
+            if (PhotonNetwork.IsMasterClient)
+            {
+                PhotonNetwork.Destroy(targetView.gameObject);
             }
             else
             {
                 photonView.RPC(nameof(RequestDestroy), RpcTarget.MasterClient, targetView.ViewID);
             }
         }
+
         [PunRPC]
         private void RequestDestroy(int viewID)
         {
-            PhotonView targetView = PhotonNetwork.GetPhotonView(viewID);
-            if (targetView == null)
-            {
-                Debug.LogWarning($"PhotonView with ViewID {viewID} not found.");
-                return;
-            }
+            if (!PhotonNetwork.IsMasterClient) return;
 
-            if (PhotonNetwork.IsMasterClient)
+            PhotonView targetView = PhotonNetwork.GetPhotonView(viewID);
+            if (targetView != null)
             {
                 PhotonNetwork.Destroy(targetView.gameObject);
             }
