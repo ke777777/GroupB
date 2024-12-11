@@ -172,15 +172,50 @@ namespace Complete
 
             if (collision.gameObject.CompareTag("ShellCartridge"))
             {
-                GainingWeaponNumber("Shell");
-                PhotonNetwork.Destroy(collision.gameObject); // カートリッジを削除
+                if (collision.gameObject.GetComponent<PhotonView>()?.IsMine == true)
+                {
+                    GainingWeaponNumber("Shell");
+                    PhotonNetwork.Destroy(collision.gameObject); // カートリッジを削除
+                }
+                else if (PhotonNetwork.IsMasterClient)
+                {
+                    PhotonNetwork.Destroy(collision.gameObject); // マスタークライアントが削除
+                }
+                else
+                {
+                    // MasterClientに削除依頼を送信
+                    photonView.RPC("RequestDestroy", RpcTarget.MasterClient, collision.gameObject.GetComponent<PhotonView>().ViewID);
+                }
             }
             else if (collision.gameObject.CompareTag("MineCartridge"))
             {
-                GainingWeaponNumber("Mine");
-                PhotonNetwork.Destroy(collision.gameObject); // カートリッジを削除
+                if (collision.gameObject.GetComponent<PhotonView>()?.IsMine == true)
+                {
+                    GainingWeaponNumber("Mine");
+                    PhotonNetwork.Destroy(collision.gameObject); // カートリッジを削除
+                }
+                else if (PhotonNetwork.IsMasterClient)
+                {
+                    PhotonNetwork.Destroy(collision.gameObject); // マスタークライアントが削除
+                }
+                else
+                {
+                    // MasterClientに削除依頼を送信
+                    photonView.RPC("RequestDestroy", RpcTarget.MasterClient, collision.gameObject.GetComponent<PhotonView>().ViewID);
+                }
             }
         }
+
+        [PunRPC]
+        private void RequestDestroy(int viewID)
+        {
+            PhotonView targetView = PhotonNetwork.GetPhotonView(viewID);
+            if (targetView != null && targetView.IsMine)
+            {
+                PhotonNetwork.Destroy(targetView.gameObject);
+            }
+        }
+
 
         /*[PunRPC]
         public void UpdateWeaponStock(string weaponName, int currentStock)

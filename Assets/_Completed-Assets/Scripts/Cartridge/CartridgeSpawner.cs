@@ -75,19 +75,10 @@ namespace Complete
         private void Start()
         {
             gameManager = FindObjectOfType<GameManager>();
-            if (cartridgeData == null || cartridgeData.cartridgePrefab == null)
-            {
-                Debug.LogError("cartridgeData‚Ü‚½‚ÍcartridgePrefab‚ªİ’è‚³‚ê‚Ä‚¢‚Ü‚¹‚ñBˆ—‚ğ’†’f‚µ‚Ü‚·B");
-                return;
-            }
 
             if (gameManager != null)
             {
                 gameManager.GameStateChanged += HandleGameStateChanged;
-            }
-            else
-            {
-                Debug.LogError("GameManager‚ªŒ©‚Â‚©‚è‚Ü‚¹‚ñB");
             }
         }
 
