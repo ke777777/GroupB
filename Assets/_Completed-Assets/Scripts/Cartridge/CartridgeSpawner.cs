@@ -10,6 +10,8 @@ namespace Complete
         private GameManager gameManager;
         private Coroutine spawnCoroutine;
         [SerializeField] private LayerMask groundLayer; // 地面を判定するレイヤー
+        private float spawnRange = 40f;
+        private float groundCheckHeight = 50f;
 
 
         public void SpawnCartridge(CartridgeData data)
@@ -32,7 +34,13 @@ namespace Complete
             GameObject prefab = Resources.Load<GameObject>(data.cartridgePrefab.name);
             if (prefab != null)
             {
-                PhotonNetwork.Instantiate(prefab.name, spawnPosition, Quaternion.identity);
+                GameObject cartridge = PhotonNetwork.Instantiate(prefab.name, spawnPosition, Quaternion.identity);
+                Rigidbody rb = cartridge.GetComponent<Rigidbody>();
+                if (rb != null)
+                {
+                    rb.velocity = Vector3.zero; // 初期速度をリセット
+                    rb.angularVelocity = Vector3.zero; // 回転速度をリセット
+                }
             }
             else
             {
@@ -66,18 +74,18 @@ namespace Complete
             for (int i = 0; i < maxAttempts; i++)
             {
                 // ランダムなX, Z座標を取得
-                float randomX = Random.Range(-40f, 40f);
-                float randomZ = Random.Range(-40f, 40f);
-                Vector3 groundCheckPosition = new Vector3(randomX, 1f, randomZ);
+                float randomX = Random.Range(-spawnRange, spawnRange);
+                float randomZ = Random.Range(-spawnRange, spawnRange);
+                Vector3 groundCheckPosition = new Vector3(randomX, groundCheckHeight, randomZ);
 
-                // 下方向にレイキャストして地面を探す
+                // 地面オブジェクトのチェック
                 if (Physics.Raycast(groundCheckPosition, Vector3.down, out RaycastHit hitInfo, Mathf.Infinity, groundLayer))
                 {
                     // 地面オブジェクトのチェック
                     if (hitInfo.collider.CompareTag("Ground"))
                     {
                         Vector3 spawnPosition = hitInfo.point;
-                        spawnPosition.y = 1f; // カートリッジをy=1に設定
+                        spawnPosition.y = 1f; // カートリッジをy=1に固定
 
                         // 上方向にレイキャストして障害物がないことを確認
                         if (!Physics.Raycast(spawnPosition + Vector3.up * 0.5f, Vector3.up, 1f))
