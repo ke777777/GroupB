@@ -62,15 +62,21 @@ public class NetworkManager : MonoBehaviourPunCallbacks
     {
         Debug.Log("Joined Room");
         if (readyButton != null)
-        {
-            readyButton.interactable = true;
-        }
+            UpdateReadyButtonState();
     }
 
     // 対戦相手がルームに参加した時
     public override void OnPlayerEnteredRoom(Player newPlayer)
     {
         Debug.Log($"{newPlayer.NickName} has joined the room");
+        UpdateReadyButtonState();
+    }
+
+    // 対戦相手がルームから退出した時
+    public override void OnPlayerLeftRoom(Player otherPlayer)
+    {
+        Debug.Log($"{otherPlayer.NickName} has left the room");
+        UpdateReadyButtonState();
     }
 
     // READYボタン押下時
@@ -113,7 +119,7 @@ public class NetworkManager : MonoBehaviourPunCallbacks
         if (isReady && opponentReady)
         {
             Debug.Log("Both players are ready. Starting the match...");
-            PhotonNetwork.LoadLevel(SceneNames.CompleteGameScene); // シーン遷移
+            PhotonNetwork.LoadLevel(SceneNames.CompleteGameScene);
         }
     }
 
@@ -123,13 +129,21 @@ public class NetworkManager : MonoBehaviourPunCallbacks
         if (isSelf)
         {
             Debug.Log("Updating UI: You are ready.");
-            // 自分のUI更新処理
         }
         else
         {
             Debug.Log("Updating UI: Opponent is ready.");
-            // 相手のUI更新処理
         }
+    }
+    private void UpdateReadyButtonState()
+    {
+        bool isOpponentConnected = PhotonNetwork.PlayerList.Length == 2;
+        if (readyButton != null)
+        {
+            readyButton.interactable = isOpponentConnected;
+        }
+
+        Debug.Log($"Ready button state updated. Interactable: {readyButton.interactable}");
     }
 
     // スタンプボタンが押されたとき
