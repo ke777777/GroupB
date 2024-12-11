@@ -3,76 +3,51 @@ using Photon.Pun;
 
 public class MiniMapMineIcon : MonoBehaviourPun
 {
-    [SerializeField] private GameObject skullIconPrefab; // ミニマップ用髑髏アイコンのプレハブ
-    [SerializeField] private RectTransform miniMapTransform; // ミニマップのUIキャンバスのRectTransform
-    [SerializeField] private Camera miniMapCamera; // ミニマップ用カメラ
-    private GameObject skullIconInstance; // 髑髏アイコンのインスタンス
+    [SerializeField] private GameObject skullPrefab;
+    private float heightOffset = 1.0f;
+    private GameObject skullInstance;
     private void Start()
     {
-        // MiniMapTransformを自動取得
-        Canvas miniMapCanvas = FindObjectOfType<Canvas>();
-        if (miniMapCanvas != null)
-        {
-            miniMapTransform = miniMapCanvas.GetComponent<RectTransform>();
-        }
-        else
-        {
-            Debug.LogError("MiniMap Canvas not found!");
-            return;
-        }
-
-        // MiniMapCameraを自動取得
-        miniMapCamera = GameObject.FindWithTag("MiniMapCamera")?.GetComponent<Camera>();
-        if (miniMapCamera == null)
-        {
-            Debug.LogError("MiniMap Camera not found!");
-            return;
-        }
-
+        // 自分が設置した地雷の場合のみSkullを生成
         if (photonView.IsMine)
         {
-            AddSkullToMiniMap();
+            CreateSkullOnMiniMap();
         }
     }
-    private void Update()
+
+    private void CreateSkullOnMiniMap()
     {
-        if (skullIconInstance != null && miniMapCamera != null)
+        skullInstance = Instantiate(skullPrefab);
+        Vector3 adjustedPosition = transform.position;
+        adjustedPosition.y += heightOffset;
+        skullInstance.transform.position = adjustedPosition;
+
+        // レイヤーを設定
+        int miniMapLayer = LayerMask.NameToLayer("MiniMap");
+        if (miniMapLayer == -1)
         {
-            UpdateIconPosition();
+            Debug.LogError("MiniMapOnly layer not found.");
+            return;
         }
+        SetLayerRecursively(skullInstance, miniMapLayer);
     }
 
-    private void AddSkullToMiniMap()
+    private void SetLayerRecursively(GameObject obj, int layer)
     {
-        skullIconInstance = Instantiate(skullIconPrefab, miniMapTransform);
-
-        skullIconInstance.layer = LayerMask.NameToLayer("MiniMap");
-
-        UpdateIconPosition();
-    }
-    private void UpdateIconPosition()
-    {
-        // 地雷のワールド座標をスクリーン座標に変換
-        Vector3 screenPosition = miniMapCamera.WorldToScreenPoint(transform.position);
-
-        // スクリーン座標をミニマップのローカル座標に変換
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            miniMapTransform,
-            screenPosition,
-            miniMapCamera,
-            out Vector2 localPosition
-        );
-
-        // 髑髏アイコンの位置を更新
-        skullIconInstance.GetComponent<RectTransform>().anchoredPosition = localPosition;
+        // オブジェクトとその子オブジェクトにレイヤーを設定
+        obj.layer = layer;
+        foreach (Transform child in obj.transform)
+        {
+            child.gameObject.layer = layer;
+        }
     }
 
     private void OnDestroy()
     {
-        // 地雷が削除された場合、ミニマップのアイコンも削除
-        if (skullIconInstance != null)
+        // 地雷が削除された場合、Skullも削除
+        if (skullInstance != null)
         {
-            Destroy(skullIconInstance);
+            Destroy(skullInstance);
         }
     }
 }
