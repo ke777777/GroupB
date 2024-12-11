@@ -46,17 +46,13 @@ public class MiniMapFollowPlayer : MonoBehaviour
                 {
                     playerTransform = player.transform;
                     isPlayerFound = true; // プレイヤーを見つけたらフラグを設定
-                    Debug.Log("Local player found for MiniMap.");
                     yield break;
                 }
             }
 
-            // プレイヤーが見つからなかった場合、再試行
-            Debug.LogWarning("Local player not found. Retrying...");
-            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSeconds(0.5f);             // プレイヤーが見つからなかった場合、再試行
         }
 
-        // 再試行が終了してもプレイヤーが見つからなかった場合のフォールバック
         if (!isPlayerFound)
         {
             Debug.LogError("Failed to find local player for MiniMap. Check player spawning and Photon setup.");

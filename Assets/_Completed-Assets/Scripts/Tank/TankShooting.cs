@@ -166,8 +166,50 @@ namespace Complete
                 Debug.LogWarning($"Weapon '{weaponName}' not found in stock dictionary.");
             }
         }
+        private void OnCollisionEnter(Collision collision)
+        {
+            if (!photonView.IsMine) return;
+
+            PhotonView targetView = collision.gameObject.GetComponent<PhotonView>();
+
+            if (collision.gameObject.CompareTag("ShellCartridge"))
+            {
+                HandleCartridgeCollision(targetView, "Shell");
+            }
+            else if (collision.gameObject.CompareTag("MineCartridge"))
+            {
+                HandleCartridgeCollision(targetView, "Mine");
+            }
+        }
+
+        private void HandleCartridgeCollision(PhotonView targetView, string weaponType)
+        {
+            GainingWeaponNumber(weaponType);
+
+            // マスタークライアントに削除を依頼
+            if (PhotonNetwork.IsMasterClient)
+            {
+                PhotonNetwork.Destroy(targetView.gameObject);
+            }
+            else
+            {
+                photonView.RPC(nameof(RequestDestroy), RpcTarget.MasterClient, targetView.ViewID);
+            }
+        }
 
         [PunRPC]
+        private void RequestDestroy(int viewID)
+        {
+            if (!PhotonNetwork.IsMasterClient) return;
+
+            PhotonView targetView = PhotonNetwork.GetPhotonView(viewID);
+            if (targetView != null)
+            {
+                PhotonNetwork.Destroy(targetView.gameObject);
+            }
+        }
+
+        /*[PunRPC]
         public void UpdateWeaponStock(string weaponName, int currentStock)
         {
             if (weaponStockDictionary.ContainsKey(weaponName))
@@ -175,7 +217,7 @@ namespace Complete
                 weaponStockDictionary[weaponName].SetWeaponNumber(currentStock);
                 WeaponStockChanged?.Invoke(weaponName, currentStock);
             }
-        }
+        }*/
 
     }
 }

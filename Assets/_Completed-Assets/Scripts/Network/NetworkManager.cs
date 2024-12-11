@@ -9,6 +9,7 @@ public class NetworkManager : MonoBehaviourPunCallbacks
     // ロビー関連
     private bool isReady = false;        // 自分の準備完了状態
     private bool opponentReady = false; // 対戦相手の準備完了状態
+    [SerializeField] private Button readyButton;  // Readyボタンの参照
 
     // スタンプ関連
     public GameObject stampPrefab;       // スタンプ用プレハブ
@@ -23,7 +24,10 @@ public class NetworkManager : MonoBehaviourPunCallbacks
     void Start()
     {
         Debug.Log("NetworkManager Start");
-
+        if (readyButton != null)
+        {
+            readyButton.interactable = false;
+        }
         // Photonサーバーに接続
         PhotonNetwork.ConnectUsingSettings();
         Debug.Log("Connecting to Photon...");
@@ -57,12 +61,22 @@ public class NetworkManager : MonoBehaviourPunCallbacks
     public override void OnJoinedRoom()
     {
         Debug.Log("Joined Room");
+        if (readyButton != null)
+            UpdateReadyButtonState();
     }
 
     // 対戦相手がルームに参加した時
     public override void OnPlayerEnteredRoom(Player newPlayer)
     {
         Debug.Log($"{newPlayer.NickName} has joined the room");
+        UpdateReadyButtonState();
+    }
+
+    // 対戦相手がルームから退出した時
+    public override void OnPlayerLeftRoom(Player otherPlayer)
+    {
+        Debug.Log($"{otherPlayer.NickName} has left the room");
+        UpdateReadyButtonState();
     }
 
     // READYボタン押下時
@@ -70,7 +84,6 @@ public class NetworkManager : MonoBehaviourPunCallbacks
     {
         Debug.Log("ReadyButtonPressed called");
 
-        // `photonView`の確認
         if (photonView == null)
         {
             Debug.LogError("photonView is null. Ensure NetworkManager has a PhotonView component.");
@@ -85,7 +98,7 @@ public class NetworkManager : MonoBehaviourPunCallbacks
 
         isReady = true;
         Debug.Log("You are now ready.");
-        UpdateReadyStatusUI(true); // UIの更新
+        UpdateReadyStatusUI(true);
         photonView.RPC("SetOpponentReady", RpcTarget.Others); // 相手に通知
         CheckReadyState();
     }
@@ -106,7 +119,7 @@ public class NetworkManager : MonoBehaviourPunCallbacks
         if (isReady && opponentReady)
         {
             Debug.Log("Both players are ready. Starting the match...");
-            PhotonNetwork.LoadLevel(SceneNames.CompleteGameScene); // シーン遷移
+            PhotonNetwork.LoadLevel(SceneNames.CompleteGameScene);
         }
     }
 
@@ -116,13 +129,21 @@ public class NetworkManager : MonoBehaviourPunCallbacks
         if (isSelf)
         {
             Debug.Log("Updating UI: You are ready.");
-            // 自分のUI更新処理
         }
         else
         {
             Debug.Log("Updating UI: Opponent is ready.");
-            // 相手のUI更新処理
         }
+    }
+    private void UpdateReadyButtonState()
+    {
+        bool isOpponentConnected = PhotonNetwork.PlayerList.Length == 2;
+        if (readyButton != null)
+        {
+            readyButton.interactable = isOpponentConnected;
+        }
+
+        Debug.Log($"Ready button state updated. Interactable: {readyButton.interactable}");
     }
 
     // スタンプボタンが押されたとき

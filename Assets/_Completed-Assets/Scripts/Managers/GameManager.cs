@@ -96,6 +96,12 @@ namespace Complete
             InitializeTanks();
             SpawnMyTank(); // 各クライアントが自分のタンクを生成
             yield return StartCoroutine(FindAndAssignTanks());
+            while (CountWinsManager.Instance == null)
+            {
+                Debug.Log("Waiting for CountWinsManager to be initialized...");
+                yield return null;
+            }
+
             StartCoroutine(GameLoop());
         }
 
@@ -410,12 +416,32 @@ namespace Complete
             // メッセージを設定
             if (m_GameWinner != null)
             {
-                m_MessageText.text = $"{m_GameWinner.m_ColoredPlayerText} is the winner as the opponent has left the game!";
+                m_MessageText.text = $"{m_GameWinner.m_ColoredPlayerText} is the winner because the opponent has left the game!";
             }
 
             // 一定時間待機してからタイトル画面に戻る
             yield return new WaitForSeconds(5f);
             PhotonNetwork.LoadLevel(SceneNames.TitleScene);
+        }
+
+        private void DestroyAllMines()
+        {
+            GameObject[] mines = GameObject.FindGameObjectsWithTag("Mine"); // 地雷をすべて取得
+
+            foreach (var mine in mines)
+            {
+                PhotonView minePhotonView = mine.GetComponent<PhotonView>();
+                if (minePhotonView != null && PhotonNetwork.IsMasterClient)
+                {
+                    PhotonNetwork.Destroy(mine); // マスタークライアントとして地雷を削除
+                }
+                else
+                {
+                    Destroy(mine); // ローカルで削除（PhotonViewがない場合など）
+                }
+            }
+
+            Debug.Log("All mines destroyed at the end of the round.");
         }
 
         private void ResetTankHealth()
@@ -509,25 +535,27 @@ namespace Complete
 
             // See if there is a winner now the round is over.
             m_RoundWinner = GetRoundWinner();
-            if (PhotonNetwork.IsMasterClient)
+            if (PhotonNetwork.IsMasterClient && m_RoundWinner != null)
             {
-                if (m_RoundWinner != null)
-                {
-                    Debug.Log($"Round winner is Player {m_RoundWinner.m_PlayerNumber}");
-                    IncrementWinCount(m_RoundWinner.m_PlayerNumber); // 勝利数を増加
-                }
-                else
-                {
-                    Debug.Log("No round winner detected.");
-                }
+                // 勝利数を先にインクリメントし、その後少し待ってRPC反映を促す
+                IncrementWinCount(m_RoundWinner.m_PlayerNumber);
 
-                // Now the winner's score has been incremented, see if someone has one the game.
-                m_GameWinner = GetGameWinner();
+                photonView.RPC(nameof(ShowEndMessageRPC), RpcTarget.All);
             }
+            else
+            {
+                // Get a message based on the scores and whether or not there is a game winner and display it.
+                string message = EndMessage();
+                m_MessageText.text = message;
+            }
+            // Now the winner's score has been incremented, see if someone has one the game.
+            m_GameWinner = GetGameWinner();
             if (CountWinsManager.Instance != null)
             {
                 CountWinsManager.Instance.UpdateWinStars();
             }
+
+            DestroyAllMines();
 
             if (m_GameWinner != null)
             {
@@ -536,12 +564,16 @@ namespace Complete
                 PhotonNetwork.LoadLevel(SceneNames.TitleScene);
                 yield break;
             }
-            // Get a message based on the scores and whether or not there is a game winner and display it.
-            string message = EndMessage();
-            m_MessageText.text = message;
-
             // Wait for the specified length of time until yielding control back to the game loop.
             yield return m_EndWait;
+        }
+
+        [PunRPC]
+        private void ShowEndMessageRPC()
+        {
+            // ここで必ずUpdateWinCountsが処理済みになっているので、m_Winsは正しい値に更新されている
+            string message = EndMessage();
+            m_MessageText.text = message;
         }
         [PunRPC]
         private void UpdateWinCounts(int playerNumber, int wins)

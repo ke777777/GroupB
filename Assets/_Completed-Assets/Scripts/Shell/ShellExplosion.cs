@@ -32,13 +32,19 @@ namespace Complete
         {
             isDamageActive = true;
         }
+
+
         private void OnTriggerEnter(Collider other)
         {
             if (isMine && !isDamageActive)
             {
                 return;
             }
-
+            photonView.RPC("RPC_Explode", RpcTarget.All);
+        }
+        [PunRPC]
+        private void RPC_Explode()
+        {
             // Collect all the colliders in a sphere from the shell's current position to a radius of the explosion radius.
             Collider[] colliders = Physics.OverlapSphere(transform.position, m_ExplosionRadius, m_TankMask);
 
@@ -85,7 +91,6 @@ namespace Complete
             // Destroy the shell.
             Destroy(gameObject);
         }
-
 
         private float CalculateDamage(Vector3 targetPosition)
         {
