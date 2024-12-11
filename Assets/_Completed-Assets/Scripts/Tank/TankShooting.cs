@@ -171,11 +171,6 @@ namespace Complete
             if (!photonView.IsMine) return;
 
             PhotonView targetView = collision.gameObject.GetComponent<PhotonView>();
-            if (targetView == null)
-            {
-                Debug.LogWarning("PhotonViewが見つかりません。削除をスキップします。");
-                return;
-            }
 
             if (collision.gameObject.CompareTag("ShellCartridge"))
             {

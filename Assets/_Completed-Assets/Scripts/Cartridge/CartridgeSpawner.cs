@@ -62,31 +62,34 @@ namespace Complete
 
         private Vector3 FindFlatPosition()
         {
-            // ランダムなX, Z座標を取得
-            float randomX = Random.Range(-40f, 40f);
-            float randomZ = Random.Range(-40f, 40f);
-
-            Vector3 randomPosition = new Vector3(randomX, 50f, randomZ); // Yを高い位置から始める
-            Ray ray = new Ray(randomPosition, Vector3.down); // 下方向にレイを飛ばす
-
-            // レイキャストで地面の位置を探す
-            if (Physics.Raycast(ray, out RaycastHit hitInfo, Mathf.Infinity, groundLayer))
+            const int maxAttempts = 10; // 位置を探す試行回数の上限
+            for (int i = 0; i < maxAttempts; i++)
             {
-                // ヒットした地形の法線を取得して回転を調整
-                Vector3 flatPosition = hitInfo.point;
-                Vector3 normal = hitInfo.normal;
+                // ランダムなX, Z座標を取得
+                float randomX = Random.Range(-40f, 40f);
+                float randomZ = Random.Range(-40f, 40f);
+                Vector3 groundCheckPosition = new Vector3(randomX, 50f, randomZ);
 
-                // 地形が平坦でない場合はスキップ（法線が上向きに近い場合のみ生成）
-                if (Vector3.Angle(normal, Vector3.up) > 10f) // 平坦である角度のしきい値（10度以内）
+                // 下方向にレイキャストして地面を探す
+                if (Physics.Raycast(groundCheckPosition, Vector3.down, out RaycastHit hitInfo, Mathf.Infinity, groundLayer))
                 {
-                    return Vector3.zero; // 不適切な位置
+                    // 地面オブジェクトのチェック
+                    if (hitInfo.collider.CompareTag("Ground"))
+                    {
+                        Vector3 spawnPosition = hitInfo.point;
+                        spawnPosition.y = 1f; // カートリッジをy=1に設定
+
+                        // 上方向にレイキャストして障害物がないことを確認
+                        if (!Physics.Raycast(spawnPosition + Vector3.up * 0.5f, Vector3.up, 1f))
+                        {
+                            return spawnPosition;
+                        }
+                    }
                 }
-
-                return flatPosition;
             }
-
-            return Vector3.zero; // 地形が見つからなければ無効な値を返す
+            return Vector3.zero; // 有効な位置が見つからない場合
         }
+
         private IEnumerator SpawnRoutine(CartridgeData data)
         {
             while (true)
