@@ -41,10 +41,35 @@ public class MiniMapMineIcon : MonoBehaviourPun
             child.gameObject.layer = layer;
         }
     }
+    private void Update()
+    {
+        UpdateIconVisibility();
+    }
+
+
+    private void UpdateIconVisibility()
+    {
+        if (skullInstance == null || Camera.main == null) return;
+
+        Vector3 screenPosition = Camera.main.WorldToScreenPoint(skullInstance.transform.position);
+
+        bool isOutsideView = screenPosition.z < 0 ||
+                             screenPosition.x < 0 || screenPosition.x > Screen.width ||
+                             screenPosition.y < 0 || screenPosition.y > Screen.height;
+
+        skullInstance.SetActive(!isOutsideView);
+    }
 
     private void OnDestroy()
     {
         // ’n—‹‚ªíœ‚³‚ê‚½ê‡ASkull‚àíœ
+        if (skullInstance != null)
+        {
+            Destroy(skullInstance);
+        }
+    }
+    private void RemoveSkullFromMiniMap()
+    {
         if (skullInstance != null)
         {
             Destroy(skullInstance);
