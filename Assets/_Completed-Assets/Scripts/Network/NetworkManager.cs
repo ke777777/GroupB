@@ -9,6 +9,7 @@ public class NetworkManager : MonoBehaviourPunCallbacks
     // ロビー関連
     private bool isReady = false;        // 自分の準備完了状態
     private bool opponentReady = false; // 対戦相手の準備完了状態
+    [SerializeField] private Button readyButton;  // Readyボタンの参照
 
     // スタンプ関連
     public GameObject stampPrefab;       // スタンプ用プレハブ
@@ -23,7 +24,10 @@ public class NetworkManager : MonoBehaviourPunCallbacks
     void Start()
     {
         Debug.Log("NetworkManager Start");
-
+        if (readyButton != null)
+        {
+            readyButton.interactable = false;
+        }
         // Photonサーバーに接続
         PhotonNetwork.ConnectUsingSettings();
         Debug.Log("Connecting to Photon...");
@@ -57,6 +61,10 @@ public class NetworkManager : MonoBehaviourPunCallbacks
     public override void OnJoinedRoom()
     {
         Debug.Log("Joined Room");
+        if (readyButton != null)
+        {
+            readyButton.interactable = true;
+        }
     }
 
     // 対戦相手がルームに参加した時
@@ -70,7 +78,6 @@ public class NetworkManager : MonoBehaviourPunCallbacks
     {
         Debug.Log("ReadyButtonPressed called");
 
-        // `photonView`の確認
         if (photonView == null)
         {
             Debug.LogError("photonView is null. Ensure NetworkManager has a PhotonView component.");
@@ -85,7 +92,7 @@ public class NetworkManager : MonoBehaviourPunCallbacks
 
         isReady = true;
         Debug.Log("You are now ready.");
-        UpdateReadyStatusUI(true); // UIの更新
+        UpdateReadyStatusUI(true);
         photonView.RPC("SetOpponentReady", RpcTarget.Others); // 相手に通知
         CheckReadyState();
     }
