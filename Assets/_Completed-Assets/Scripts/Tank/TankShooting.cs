@@ -168,54 +168,60 @@ namespace Complete
         }
         private void OnCollisionEnter(Collision collision)
         {
-            if (!photonView.IsMine) return; // 自分のタンク以外は処理しない
+            if (!photonView.IsMine) return;
+
+            PhotonView targetView = collision.gameObject.GetComponent<PhotonView>();
+            if (targetView == null)
+            {
+                Debug.LogWarning("PhotonViewが見つかりません。削除をスキップします。");
+                return;
+            }
 
             if (collision.gameObject.CompareTag("ShellCartridge"))
             {
-                if (collision.gameObject.GetComponent<PhotonView>()?.IsMine == true)
-                {
-                    GainingWeaponNumber("Shell");
-                    PhotonNetwork.Destroy(collision.gameObject); // カートリッジを削除
-                }
-                else if (PhotonNetwork.IsMasterClient)
-                {
-                    PhotonNetwork.Destroy(collision.gameObject); // マスタークライアントが削除
-                }
-                else
-                {
-                    // MasterClientに削除依頼を送信
-                    photonView.RPC("RequestDestroy", RpcTarget.MasterClient, collision.gameObject.GetComponent<PhotonView>().ViewID);
-                }
+                HandleCartridgeCollision(targetView, "Shell");
             }
             else if (collision.gameObject.CompareTag("MineCartridge"))
             {
-                if (collision.gameObject.GetComponent<PhotonView>()?.IsMine == true)
-                {
-                    GainingWeaponNumber("Mine");
-                    PhotonNetwork.Destroy(collision.gameObject); // カートリッジを削除
-                }
-                else if (PhotonNetwork.IsMasterClient)
-                {
-                    PhotonNetwork.Destroy(collision.gameObject); // マスタークライアントが削除
-                }
-                else
-                {
-                    // MasterClientに削除依頼を送信
-                    photonView.RPC("RequestDestroy", RpcTarget.MasterClient, collision.gameObject.GetComponent<PhotonView>().ViewID);
-                }
+                HandleCartridgeCollision(targetView, "Mine");
             }
         }
 
+        private void HandleCartridgeCollision(PhotonView targetView, string weaponType)
+        {
+            if (targetView.IsMine)
+            {
+                GainingWeaponNumber(weaponType);
+                PhotonNetwork.Destroy(targetView.gameObject);
+            }
+            else if (PhotonNetwork.IsMasterClient)
+            {
+                PhotonNetwork.Destroy(targetView.gameObject);
+            }
+            else
+            {
+                photonView.RPC("RequestDestroy", RpcTarget.MasterClient, targetView.ViewID);
+            }
+        }
         [PunRPC]
         private void RequestDestroy(int viewID)
         {
             PhotonView targetView = PhotonNetwork.GetPhotonView(viewID);
-            if (targetView != null && targetView.IsMine)
+            if (targetView == null)
+            {
+                Debug.LogWarning($"PhotonView with ViewID {viewID} not found. ");
+                return;
+            }
+
+            if (targetView.IsMine)
             {
                 PhotonNetwork.Destroy(targetView.gameObject);
             }
+            else
+            {
+                Debug.LogWarning($"PhotonView with ViewID {viewID} is not owned by this client.");
+            }
         }
-
 
         /*[PunRPC]
         public void UpdateWeaponStock(string weaponName, int currentStock)

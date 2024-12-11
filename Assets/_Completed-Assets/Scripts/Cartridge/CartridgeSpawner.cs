@@ -9,6 +9,8 @@ namespace Complete
         [SerializeField] private CartridgeData cartridgeData;
         private GameManager gameManager;
         private Coroutine spawnCoroutine;
+        [SerializeField] private LayerMask groundLayer; // 地面を判定するレイヤー
+
 
         public void SpawnCartridge(CartridgeData data)
         {
@@ -18,31 +20,26 @@ namespace Complete
                 return;
             }
 
-            Vector3 randomPosition = new Vector3(
+            Vector3 spawnPosition = FindFlatPosition();
+
+            /* Vector3 randomPosition = new Vector3(
                 Random.Range(-40f, 40f), // X座標の範囲
                 1f,                      // Y座標（固定）
                 Random.Range(-40f, 40f)  // Z座標の範囲
             );
+            */
 
             GameObject prefab = Resources.Load<GameObject>(data.cartridgePrefab.name);
-
             if (prefab != null)
             {
-                GameObject cartridge = PhotonNetwork.Instantiate(prefab.name, randomPosition, Quaternion.identity);
-                /*if (cartridge != null)
-                {
-                    Debug.Log($"Instantiated cartridge prefab '{prefab.name}' at position {randomPosition}");
-                }
-                else
-                {
-                    Debug.LogError($"Failed to instantiate cartridge prefab '{prefab.name}'");
-                }*/
+                PhotonNetwork.Instantiate(prefab.name, spawnPosition, Quaternion.identity);
             }
             else
             {
                 Debug.LogError($"Prefab '{data.cartridgePrefab.name}' not found in Resources.");
             }
         }
+
 
         private void HandleGameStateChanged(GameManager.GameState newState)
         {
@@ -63,6 +60,33 @@ namespace Complete
             }
         }
 
+        private Vector3 FindFlatPosition()
+        {
+            // ランダムなX, Z座標を取得
+            float randomX = Random.Range(-40f, 40f);
+            float randomZ = Random.Range(-40f, 40f);
+
+            Vector3 randomPosition = new Vector3(randomX, 50f, randomZ); // Yを高い位置から始める
+            Ray ray = new Ray(randomPosition, Vector3.down); // 下方向にレイを飛ばす
+
+            // レイキャストで地面の位置を探す
+            if (Physics.Raycast(ray, out RaycastHit hitInfo, Mathf.Infinity, groundLayer))
+            {
+                // ヒットした地形の法線を取得して回転を調整
+                Vector3 flatPosition = hitInfo.point;
+                Vector3 normal = hitInfo.normal;
+
+                // 地形が平坦でない場合はスキップ（法線が上向きに近い場合のみ生成）
+                if (Vector3.Angle(normal, Vector3.up) > 10f) // 平坦である角度のしきい値（10度以内）
+                {
+                    return Vector3.zero; // 不適切な位置
+                }
+
+                return flatPosition;
+            }
+
+            return Vector3.zero; // 地形が見つからなければ無効な値を返す
+        }
         private IEnumerator SpawnRoutine(CartridgeData data)
         {
             while (true)
