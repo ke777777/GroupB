@@ -68,7 +68,7 @@ namespace Complete
                 // ランダムなX, Z座標を取得
                 float randomX = Random.Range(-40f, 40f);
                 float randomZ = Random.Range(-40f, 40f);
-                Vector3 groundCheckPosition = new Vector3(randomX, 50f, randomZ);
+                Vector3 groundCheckPosition = new Vector3(randomX, 1f, randomZ);
 
                 // 下方向にレイキャストして地面を探す
                 if (Physics.Raycast(groundCheckPosition, Vector3.down, out RaycastHit hitInfo, Mathf.Infinity, groundLayer))
