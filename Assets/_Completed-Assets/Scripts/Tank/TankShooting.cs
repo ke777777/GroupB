@@ -192,10 +192,11 @@ namespace Complete
             else if (PhotonNetwork.IsMasterClient)
             {
                 PhotonNetwork.Destroy(targetView.gameObject);
+
             }
             else
             {
-                photonView.RPC("RequestDestroy", RpcTarget.MasterClient, targetView.ViewID);
+                photonView.RPC(nameof(RequestDestroy), RpcTarget.MasterClient, targetView.ViewID);
             }
         }
         [PunRPC]
@@ -204,17 +205,13 @@ namespace Complete
             PhotonView targetView = PhotonNetwork.GetPhotonView(viewID);
             if (targetView == null)
             {
-                Debug.LogWarning($"PhotonView with ViewID {viewID} not found. ");
+                Debug.LogWarning($"PhotonView with ViewID {viewID} not found.");
                 return;
             }
 
-            if (targetView.IsMine)
+            if (PhotonNetwork.IsMasterClient)
             {
                 PhotonNetwork.Destroy(targetView.gameObject);
-            }
-            else
-            {
-                Debug.LogWarning($"PhotonView with ViewID {viewID} is not owned by this client.");
             }
         }
 
