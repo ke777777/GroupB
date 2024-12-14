@@ -24,6 +24,9 @@ namespace Complete
         private GameObject m_CanvasGameObject;                  // Used to disable the world space UI during the Starting and Ending phases of each round.
 
 
+        public event Action<int, int> OnWeaponStockChanged; // プレイヤー番号と所持砲弾数を通知するイベント
+
+
         public void Setup ()
         {
             // Get references to the components.
@@ -47,8 +50,21 @@ namespace Complete
                 // ... set their material color to the color specific to this tank.
                 renderers[i].material.color = m_PlayerColor;
             }
+
+            m_Shooting = m_Instance.GetComponent<TankShooting> ();
+
+            // イベントを登録して、発生時に通知されるようにする
+            if (m_Shooting != null)
+            {
+                m_Shooting.OnShellStockChanged += HandleShellStockChanged;
+            }
         }
 
+        private void HandleShellStockChanged(int newStock)
+        {
+            OnWeaponStockChanged?.Invoke(m_PlayerNumber, newStock); // イベントを発生
+        }
+    
 
         // Used during the phases of the game where the player shouldn't be able to control their tank.
         public void DisableControl ()

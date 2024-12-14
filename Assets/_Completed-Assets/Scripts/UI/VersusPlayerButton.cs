@@ -1,18 +1,18 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
+
 public class VersusPlayerButton : MonoBehaviour
 {
-   [SerializeField]private Button versusPlayerButton;
+    [SerializeField] private Button versusplayerButton;
 
-    void Start()
+    private void Start()
     {
-        versusPlayerButton.onClick.AddListener(OnClicked);
+        versusplayerButton.onClick.AddListener(OnStartButtonClicked);
     }
- private void OnClicked()
+
+    private void OnStartButtonClicked()
     {
-        SceneManager.LoadScene(SceneNames.CompleteGameScene);
+        SceneManager.LoadScene(SceneNames.GameScene);
     }
 }

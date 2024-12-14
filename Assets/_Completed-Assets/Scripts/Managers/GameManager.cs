@@ -2,6 +2,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using System;
 
 namespace Complete
 {
@@ -21,6 +22,19 @@ namespace Complete
         private WaitForSeconds m_EndWait;           // Used to have a delay whilst the round or game ends.
         private TankManager m_RoundWinner;          // Reference to the winner of the current round.  Used to make an announcement of who won.
         private TankManager m_GameWinner;           // Reference to the winner of the game.  Used to make an announcement of who won.
+
+
+        public enum GameState
+        {
+            RoundStarting,
+            RoundPlaying,
+            RoundEnding
+        }
+
+        public static GameManager Instance { get; private set; } // シングルトンパターン
+        public event Action<GameState> OnGameStateChanged; // ゲーム状態変更イベント
+
+        private GameState currentState;
 
 
         private void Start()
@@ -84,7 +98,7 @@ namespace Complete
             if (m_GameWinner != null)
             {
                 // If there is a game winner, restart the level.
-                SceneManager.LoadScene (SceneNames.TitleScene);
+                SceneManager.LoadScene(SceneNames.TitleScene);
             }
             else
             {
@@ -97,6 +111,8 @@ namespace Complete
 
         private IEnumerator RoundStarting ()
         {
+            SetGameState(GameState.RoundStarting);
+
             // As soon as the round starts reset the tanks and make sure they can't move.
             ResetAllTanks ();
             DisableTankControl ();
@@ -115,6 +131,8 @@ namespace Complete
 
         private IEnumerator RoundPlaying ()
         {
+            SetGameState(GameState.RoundPlaying);
+
             // As soon as the round begins playing let the players control the tanks.
             EnableTankControl ();
 
@@ -132,6 +150,8 @@ namespace Complete
 
         private IEnumerator RoundEnding ()
         {
+            SetGameState(GameState.RoundEnding);
+            
             // Stop tanks from moving.
             DisableTankControl ();
 
@@ -260,6 +280,29 @@ namespace Complete
             for (int i = 0; i < m_Tanks.Length; i++)
             {
                 m_Tanks[i].DisableControl();
+            }
+        }
+
+
+        private void Awake()
+        {
+            if (Instance == null)
+            {
+                Instance = this;
+                DontDestroyOnLoad(gameObject);
+            }
+            else
+            {
+                Destroy(gameObject);
+            }
+        }
+
+        public void SetGameState(GameState newState)
+        {
+            if (currentState != newState)
+            {
+                currentState = newState;
+                OnGameStateChanged?.Invoke(newState); // 状態変更を通知
             }
         }
     }

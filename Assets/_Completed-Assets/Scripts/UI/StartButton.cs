@@ -1,18 +1,30 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
+
 public class StartButton : MonoBehaviour
 {
-   [SerializeField]private Button startButton;
+    [SerializeField] private Button startButton;
 
-    void Start()
+    private void Start()
     {
-        startButton.onClick.AddListener(OnClicked);
+        startButton.onClick.AddListener(OnStartButtonClicked);
     }
- private void OnClicked()
+
+    private void OnStartButtonClicked()
     {
-        SceneManager.LoadScene(SceneNames.HomeScene);
+        // PlayerPrefsにUserIDが保存されているか確認
+        if (PlayerPrefs.HasKey("UserID"))
+        {
+            // UserIDが保存されている場合、HomeSceneに遷移
+            SceneManager.LoadScene(SceneNames.HomeScene);
+        }
+        else
+        {
+            // UserIDが未保存の場合、UserID入力シーンに遷移
+            SceneManager.LoadScene(SceneNames.UserIDScene);
+        }
+
+        // SceneManager.LoadScene(SceneNames.HomeScene);
     }
 }

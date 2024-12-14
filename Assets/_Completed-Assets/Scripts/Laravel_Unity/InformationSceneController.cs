@@ -7,6 +7,10 @@ using System.Collections.Generic;
 public class InformationSceneController : MonoBehaviour
 {
     public Text noticeText; // 通知を表示するTextコンポーネントを設定
+    public GameObject noticePopup; // ポップアップオブジェクト
+    public Text popupTitle; // ポップアップ内のタイトル表示用Text
+    public Text popupContent; // ポップアップ内のコンテンツ表示用Text
+    public Button okButton; // ポップアップ内のOKボタン
 
     private string apiUrl = "http://localhost/api/notice"; // APIのエンドポイントURL
 
@@ -39,39 +43,71 @@ public class InformationSceneController : MonoBehaviour
         }
     }
 
+
     void DisplayNotices(List<Notice> notices)
     {
-        // 通知をTextコンポーネントに表示
+        // 元のテキストコンポーネントを使用して通知を表示
         string displayText = "";
 
         // 列の開始位置を指定
-        int idColumnWidth = 8;    // ID列の幅
-        int titleColumnWidth = 25; // Title列の幅
-        int contentColumnWidth = 50; // Content列の幅
+        int titleColumnWidth = 25;
 
         // 列ヘッダーを作成
-        displayText += CreateRow("ID", "Title", "Content", idColumnWidth, titleColumnWidth, contentColumnWidth);
-        displayText += new string('-', idColumnWidth + titleColumnWidth + contentColumnWidth) + "\n"; // 区切り線
+        displayText += CreateRow("Title", titleColumnWidth);
+        displayText += new string('-', titleColumnWidth) + "\n";
+
+        float startY = 90f; // 初期Y座標
+        float rowHeight = 25f; // 各行の高さ
 
         foreach (Notice notice in notices)
         {
             displayText += CreateRow(
-                notice.id.ToString(),
-                TruncateString(notice.title, titleColumnWidth - 2), // 列幅-2で余白を確保
-                TruncateString(notice.content, contentColumnWidth - 2),
-                idColumnWidth,
-                titleColumnWidth,
-                contentColumnWidth
+                TruncateString(notice.title, titleColumnWidth - 2),
+                titleColumnWidth
             );
+
+            // タイトルテキストをクリックできるように設定
+            GameObject titleButtonObject = new GameObject("TitleButton");
+            titleButtonObject.transform.SetParent(noticeText.transform, false);
+            // Buttonを生成し、テキストをその子として追加
+            Button titleButton = titleButtonObject.AddComponent<Button>();
+            Text titleText = titleButtonObject.AddComponent<Text>();
+            titleText.text = notice.title;
+            titleText.font = noticeText.font;
+            // titleText.color = Color.blue; // 色を青にしてクリック可能に見せる
+            titleText.color = new Color(titleText.color.r, titleText.color.g, titleText.color.b, 0f); // 完全透明
+            titleText.alignment = TextAnchor.MiddleLeft;
+            titleText.raycastTarget = true; // レイキャストを有効にしてクリックを検知
+            // RectTransform設定
+            RectTransform rectTransform = titleButtonObject.GetComponent<RectTransform>();
+            rectTransform.sizeDelta = new Vector2(627, 25); // 必要に応じて調整
+            rectTransform.anchoredPosition = new Vector2(0, startY); // 個別の位置を計算
+            startY -= rowHeight; // 次の行のY座標を計算
+            // クリックイベントを設定
+            titleButton.onClick.AddListener(() => OpenPopup(notice, notices));
+ 
         }
 
         if (string.IsNullOrEmpty(displayText))
         {
-            displayText = "No notifications available.";
+            displayText = "No notices available.";
         }
 
         noticeText.text = displayText;
     }
+
+    void OpenPopup(Notice notice, List<Notice> allInquiries)
+    {
+        popupTitle.text = notice.title; // タイトルを表示
+        popupContent.text = notice.content;
+        noticePopup.SetActive(true); // ポップアップを表示
+    }
+
+    public void OnOKButtonPressed()
+    {
+        noticePopup.SetActive(false);
+    }
+
 
     // 長い文字列を切り詰めて「...」を追加
     string TruncateString(string value, int maxLength)
@@ -83,10 +119,9 @@ public class InformationSceneController : MonoBehaviour
         return value;
     }
 
-    // 各列のデータを整形して行を作成
-    string CreateRow(string id, string title, string content, int idWidth, int titleWidth, int contentWidth)
+    string CreateRow(string title, int titleWidth)
     {
-        return id.PadRight(idWidth) + title.PadRight(titleWidth) + content.PadRight(contentWidth) + "\n";
+        return title.PadRight(titleWidth) + "\n";
     }
 
     [System.Serializable]

@@ -20,9 +20,21 @@ namespace Complete
         private float m_OriginalPitch;              // The pitch of the audio source at the start of the scene.
         private ParticleSystem[] m_particleSystems; // References to all the particles systems used by the Tanks
 
+        // 砲塔用変数の追加
+        private string m_TurretTurnAxisName;      // 砲塔を回転するキーのName
+        private float m_TurretTurnInputValue;     // 砲塔を回転するキーの入力量
+        public float m_TurretTurnSpeed = 45f;     // 砲塔の回転速度
+        public GameObject TankTurret;               // 砲塔のゲームオブジェクト参照
+
         private void Awake ()
         {
             m_Rigidbody = GetComponent<Rigidbody> ();
+
+            // 砲塔のNullチェック
+            if (TankTurret == null)
+            {
+                Debug.LogError("Turret GameObject is not assigned.");
+            }
         }
 
 
@@ -34,6 +46,7 @@ namespace Complete
             // Also reset the input values.
             m_MovementInputValue = 0f;
             m_TurnInputValue = 0f;
+            m_TurretTurnInputValue = 0f;
 
             // We grab all the Particle systems child of that Tank to be able to Stop/Play them on Deactivate/Activate
             // It is needed because we move the Tank when spawning it, and if the Particle System is playing while we do that
@@ -64,6 +77,7 @@ namespace Complete
             // The axes names are based on player number.
             m_MovementAxisName = "Vertical" + m_PlayerNumber;
             m_TurnAxisName = "Horizontal" + m_PlayerNumber;
+            m_TurretTurnAxisName = "TurretTurn" + m_PlayerNumber;
 
             // Store the original pitch of the audio source.
             m_OriginalPitch = m_MovementAudio.pitch;
@@ -75,6 +89,7 @@ namespace Complete
             // Store the value of both input axes.
             m_MovementInputValue = Input.GetAxis (m_MovementAxisName);
             m_TurnInputValue = Input.GetAxis (m_TurnAxisName);
+            m_TurretTurnInputValue = Input.GetAxis (m_TurretTurnAxisName);
 
             EngineAudio ();
         }
@@ -113,6 +128,7 @@ namespace Complete
             // Adjust the rigidbodies position and orientation in FixedUpdate.
             Move ();
             Turn ();
+            TurretTurn();
         }
 
 
@@ -136,6 +152,17 @@ namespace Complete
 
             // Apply this rotation to the rigidbody's rotation.
             m_Rigidbody.MoveRotation (m_Rigidbody.rotation * turnRotation);
+        }
+
+        private void TurretTurn()
+        {
+            // 砲塔の回転角度を計算
+            float turretTurn = m_TurretTurnInputValue * m_TurretTurnSpeed * Time.deltaTime;
+
+            // 砲塔の現在の回転を取得し、Y軸の回転を更新
+            Vector3 turretEulerAngles = TankTurret.transform.localEulerAngles;
+            turretEulerAngles.y += turretTurn;
+            TankTurret.transform.localEulerAngles = turretEulerAngles;
         }
     }
 }

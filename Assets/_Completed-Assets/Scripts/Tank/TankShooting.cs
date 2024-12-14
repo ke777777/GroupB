@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
+using System;
 
 namespace Complete
 {
@@ -21,6 +22,18 @@ namespace Complete
         private float m_CurrentLaunchForce;         // The force that will be given to the shell when the fire button is released.
         private float m_ChargeSpeed;                // How fast the launch force increases, based on the max charge time.
         private bool m_Fired;                       // Whether or not the shell has been launched with this button press.
+        private bool m_IsCharging;                  // Whether the charging of the launch force is ongoing.
+        private bool m_IsIncreasing = true; // ゲージが伸びているか縮んでいるかを表す変数
+        private float m_CurrentChargeTime = 0f; // 現在のチャージ時間
+
+
+        public int m_InitialAmmo = 10;               // ゲーム開始時の砲弾数
+        public int m_CurrentAmmo;                    // 現在の砲弾数
+        public int m_MaxAmmo = 50;                   // 最大所持可能な砲弾数
+        public int m_AmmoRefillAmount = 10;          // 補充する砲弾の数
+
+
+        public event Action<int> OnShellStockChanged; // 砲弾の所持数が変化したときに通知するイベント
 
 
         private void OnEnable()
@@ -28,6 +41,8 @@ namespace Complete
             // When the tank is turned on, reset the launch force and the UI
             m_CurrentLaunchForce = m_MinLaunchForce;
             m_AimSlider.value = m_MinLaunchForce;
+            m_CurrentAmmo = m_InitialAmmo;
+            m_IsCharging = false;
         }
 
 
@@ -43,40 +58,55 @@ namespace Complete
 
         private void Update ()
         {
+            if (m_CurrentAmmo <= 0)
+            {
+                Debug.Log("No ammo left! Cannot fire.");
+                return;
+            }
+
             // The slider should have a default value of the minimum launch force.
             m_AimSlider.value = m_MinLaunchForce;
 
-            // If the max force has been exceeded and the shell hasn't yet been launched...
-            if (m_CurrentLaunchForce >= m_MaxLaunchForce && !m_Fired)
+            // 砲弾の発射ゲージが伸びるか縮むかを管理
+            if (Input.GetButtonDown(m_FireButton))
             {
-                // ... use the max force and launch the shell.
-                m_CurrentLaunchForce = m_MaxLaunchForce;
-                Fire ();
-            }
-            // Otherwise, if the fire button has just started being pressed...
-            else if (Input.GetButtonDown (m_FireButton))
-            {
-                // ... reset the fired flag and reset the launch force.
+                // チャージ開始
                 m_Fired = false;
                 m_CurrentLaunchForce = m_MinLaunchForce;
-
-                // Change the clip to the charging clip and start it playing.
+                m_IsIncreasing = true;
                 m_ShootingAudio.clip = m_ChargingClip;
-                m_ShootingAudio.Play ();
+                m_ShootingAudio.Play();
             }
-            // Otherwise, if the fire button is being held and the shell hasn't been launched yet...
-            else if (Input.GetButton (m_FireButton) && !m_Fired)
+            // チャージ中の場合
+            else if (Input.GetButton(m_FireButton) && !m_Fired)
             {
-                // Increment the launch force and update the slider.
-                m_CurrentLaunchForce += m_ChargeSpeed * Time.deltaTime;
+                // ゲージが伸びている場合
+                if (m_IsIncreasing)
+                {
+                    m_CurrentLaunchForce += m_ChargeSpeed * Time.deltaTime;
+                    if (m_CurrentLaunchForce >= m_MaxLaunchForce)
+                    {
+                        m_CurrentLaunchForce = m_MaxLaunchForce;
+                        m_IsIncreasing = false; // 最大値に達したら縮み始める
+                    }
+                }
+                // ゲージが縮んでいる場合
+                else
+                {
+                    m_CurrentLaunchForce -= m_ChargeSpeed * Time.deltaTime;
+                    if (m_CurrentLaunchForce <= m_MinLaunchForce)
+                    {
+                        m_CurrentLaunchForce = m_MinLaunchForce;
+                        m_IsIncreasing = true; // 最小値に達したら伸び始める
+                    }
+                }
 
-                m_AimSlider.value = m_CurrentLaunchForce;
+                m_AimSlider.value = m_CurrentLaunchForce; // ゲージの表示を更新
             }
-            // Otherwise, if the fire button is released and the shell hasn't been launched yet...
-            else if (Input.GetButtonUp (m_FireButton) && !m_Fired)
+            // 発射ボタンを離したら発射
+            else if (Input.GetButtonUp(m_FireButton) && !m_Fired)
             {
-                // ... launch the shell.
-                Fire ();
+                Fire();
             }
         }
 
@@ -99,6 +129,49 @@ namespace Complete
 
             // Reset the launch force.  This is a precaution in case of missing button events.
             m_CurrentLaunchForce = m_MinLaunchForce;
+
+
+            if (m_CurrentAmmo > 0)
+            {
+                // 砲弾を発射し、発射後に砲弾数を1減少
+                m_CurrentAmmo--;
+                OnShellStockChanged?.Invoke(m_CurrentAmmo);
+                Debug.Log("Fired! Remaining ammo: " + m_CurrentAmmo);
+            }
+            else
+            {
+                Debug.Log("Cannot fire. Ammo is empty.");
+                return;
+            }
+        }
+
+
+        public void RefillAmmo()
+        {
+            if (m_CurrentAmmo < m_MaxAmmo)
+            {
+                m_CurrentAmmo += m_AmmoRefillAmount;
+                if (m_CurrentAmmo > m_MaxAmmo)
+                {
+                    m_CurrentAmmo = m_MaxAmmo;
+                }
+                OnShellStockChanged?.Invoke(m_CurrentAmmo);
+                Debug.Log("Ammo refilled! Current ammo: " + m_CurrentAmmo);
+            }
+            else
+            {
+                Debug.Log("Ammo already full.");
+            }
+        }
+
+        private void OnCollisionEnter(Collision collision)
+        {
+            // 衝突相手がShellCartridgeタグの場合、砲弾を補充
+            if (collision.gameObject.CompareTag("ShellCartridge"))
+            {
+                RefillAmmo(); // 砲弾補充メソッドを呼び出し
+                Destroy(collision.gameObject); // 衝突したShellCartridgeを消去
+            }
         }
     }
 }
