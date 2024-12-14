@@ -42,7 +42,7 @@ email: test@example.com
 password: iamadmin
 
 
-タブは必要なもの全てを作成していますが、今の段階で使用できるのはDashboard,Notices,Inquiriesの三つのみです。
+タブは必要なもの全てを作成していますが、今の段階で使用できるのはDashboard, User Infos, Notices, Inquiriesのみです。
 他のタブを押したら「指定されたタブは存在しません。」と表示されるはずです。
 
 
