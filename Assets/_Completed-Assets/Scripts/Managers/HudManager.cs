@@ -83,6 +83,8 @@ namespace Complete
             if (myPlayerName != null)
             {
                 myPlayerName.text = $"Name: {data.user_name}";
+                myPlayerName.color = GetPlayerColor(myPlayerNumber);
+
             }
 
             if (myPlayerScoreText != null)

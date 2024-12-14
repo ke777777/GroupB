@@ -29,6 +29,7 @@ public class MySQLRequest : MonoBehaviour
 
     private IEnumerator SendRequest(string url)
     {
+        Debug.Log($"Sending request to: {url}");
         using (UnityWebRequest request = UnityWebRequest.Get(url))
         {
             yield return request.SendWebRequest();
