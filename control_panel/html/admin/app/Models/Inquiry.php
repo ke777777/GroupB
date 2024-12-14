@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Inquiry extends Model
 {
+    protected $connection = 'mysql';
     protected $table = 'inquiries';
     protected $fillable = ['inquiry_id', 'title', 'content', 'receiver_id', 'sender_id'];
 }

@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\NoticeController;
 use App\Http\Controllers\InquiryController;
 use Illuminate\Support\Facades\Route;
+use App\Models\UserInfo;
 use App\Models\Notice;
 use App\Models\Inquiry;
 
@@ -30,7 +31,7 @@ Route::get('/api/tabs/{tab}', function ($tab) {
 
     if ($tab === 'userinfo') {
         // mysql_twoからデータを取得
-        $userinfos = UserInfo::on('mysql_two')->get(); 
+        $userinfos = UserInfo::all();
         return view($views[$tab], compact('userinfos'))->render();
     }
 

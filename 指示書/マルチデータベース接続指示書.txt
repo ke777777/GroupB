@@ -1,0 +1,99 @@
+-- Laravelプロジェクトのマルチデータベース設定およびテーブル作成に関する全ての手順
+
+
+【注意事項】
+＊オオツカさんの指示書の2番やsql関連ファイルを実行した後に行えば大丈夫なのですが、、
+＊オオツカさんが以下のように書いていたところがあると思います。
+＊docker volume create tokuron
+＊docker container run --name tokuron-mysql -v tokuron:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=secret123 -d mysql:8.4
+＊docker exec -it tokuron-mysql bash
+＊これが第八回の資料にあるものと名前が同じで、既に同じ名前のものを課題で作成してしまっていたため、tokuronの箇所を全てuserに変えてしまっています。
+＊tokuronのまま行いたければLaravel側でも変更しなければいけない箇所があるのでお手数ですが連絡してくれると助かります。それはすぐに直せます。
+＊また、tokuronのまま行う場合は以下の指示にあるuserという文字はmysqlテーブルの作成を除き全てtokuronに置き換えてください。
+＊(一応user->tokuronの読み替えの必要がある箇所はタイトルの＊ところに＊マークつけときます)
+
+
+
+【コンテナの公開】＊    \\初期状態ではコンテナ外からアクセスできるように公開されていなかった
+1. docker stop user-mysql
+2. docker rm user-mysql    \\テーブルは保存されたまま一度コンテナだけ削除しています
+3. docker run -d --name user-mysql -v user:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=secret123 -p 3306:3306 -d mysql:8.4
+
+
+
+【コンテナのネットワーク接続変更】＊
+1. docker network connect control_panel_default user-mysql
+
+
+
+【コンテナの中に入る】＊
+1. docker exec -it user-mysql bash
+2. mysql -u root -p
+3. secret123
+4. use my_database;
+
+
+
+【MySQLの各テーブル作成・データインサート】    \\Laravelでmysqlテーブルを作成すると自動で作成されるテーブルを手動で追加する
+
+1. cacheテーブル
+・テーブルの作成(CREATEから;までコピペして貼り付ければOK)
+
+CREATE TABLE `cache` (
+    `id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+    `key` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+    `value` longtext COLLATE utf8mb4_unicode_ci NOT NULL,
+    `expiration` int(10) UNSIGNED NOT NULL,
+    PRIMARY KEY (`id`),
+    KEY `cache_key_index` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+2. sessionsテーブル
+・テーブルの作成(CREATEから;までコピペして貼り付ければOK)
+
+CREATE TABLE `sessions` (
+    `id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+    `user_id` bigint(20) UNSIGNED DEFAULT NULL,
+    `ip_address` varchar(45) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+    `user_agent` text COLLATE utf8mb4_unicode_ci,
+    `payload` longtext COLLATE utf8mb4_unicode_ci NOT NULL,
+    `last_activity` int(10) UNSIGNED NOT NULL,
+    PRIMARY KEY (`id`),
+    KEY `sessions_user_id_index` (`user_id`),
+    KEY `sessions_last_activity_index` (`last_activity`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+3. usersテーブル
+・テーブルの作成(CREATEから;までコピペして貼り付ければOK)
+
+CREATE TABLE `users` (
+    `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+    `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+    `email` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL UNIQUE,
+    `email_verified_at` timestamp NULL DEFAULT NULL,
+    `password` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+    `remember_token` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+    `created_at` timestamp NULL DEFAULT NULL,
+    `updated_at` timestamp NULL DEFAULT NULL,
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+・データのインサート(INSERTから;までコピペして貼り付ければOK)
+INSERT INTO `users` (`id`, `name`, `email`, `email_verified_at`, `password`, `remember_token`, `created_at`, `updated_at`)
+VALUES
+(1, 'Test User', 'admin@example.com', '2024-12-04 07:27:41', '$2y$12$Y9/UE6sLHNDZYU54fPz9CuxODQH4oD31EkIx.EeeEwGygeFUzq/Gq', 'S6ief4SHZO', '2024-12-04 07:27:41', '2024-12-04 07:27:41'),
+(3, 'Test User', 'test@example.com', '2024-12-04 07:36:17', '$2y$12$aEyaNEh1SBpf1uNxNrB72.DWF43AtOJmAqjWvRvbVTRNdkVDOBH2y', 'VWjbT1nWlSsyiaSU3l54ge5ZU3XzSQ682FltM0v0Ts0SMMBpbqChyfwC9v8w', '2024-12-04 07:36:18', '2024-12-04 07:36:18');
+
+
+
+
+ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
+
+最初の注意事項含めわからない箇所があれば何でも連絡してください！
+わかりにくくなってしまって申し訳ないです、、
+
+ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
+
