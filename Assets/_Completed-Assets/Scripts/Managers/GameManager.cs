@@ -36,6 +36,8 @@ namespace Complete
         public delegate void OnGameStateChanged(GameState newGameState);
         public event OnGameStateChanged GameStateChanged;
 
+        [SerializeField]
+        private MySQLRequest mySQLRequest;
         private void Start()
         {
             m_CameraControl = FindObjectOfType<CameraControl>();
@@ -391,6 +393,15 @@ namespace Complete
             string playerNameInfo = $" ({otherPlayer.NickName})";
             m_MessageText.text = $"{playerInfo}{playerNameInfo} has left the game.\nYou are the winner!";
 
+            // 相手が抜けた場合、自分が勝者になると想定
+            TankManager myTank = m_Tanks.FirstOrDefault(t => t.m_Instance != null && t.m_Instance.GetComponent<PhotonView>().IsMine);
+            TankManager opponentTank = m_Tanks.FirstOrDefault(t => t.m_PlayerNumber != myTank.m_PlayerNumber);
+
+            // 勝敗データを更新 (myTankが勝者)
+            if (mySQLRequest != null && PhotonNetwork.IsMasterClient && myTank != null && opponentTank != null)
+            {
+                mySQLRequest.UpdateGameCount(myTank.m_PlayerNumber, "n_win", opponentTank.m_PlayerNumber, "n_loss");
+            }
             StartCoroutine(HandlePlayerLeft()); // 5秒後にタイトル画面に戻る
         }
 
@@ -541,6 +552,14 @@ namespace Complete
                 IncrementWinCount(m_RoundWinner.m_PlayerNumber);
 
                 photonView.RPC(nameof(ShowEndMessageRPC), RpcTarget.All);
+
+                // 5ラウンド先取でゲーム終了の場合、ここで勝敗が確定
+                // m_GameWinnerがいる場合、データベースへ結果送信
+                TankManager opponentTank = m_Tanks.FirstOrDefault(t => t.m_PlayerNumber != m_RoundWinner.m_PlayerNumber);
+                if (m_GameWinner != null && opponentTank != null && mySQLRequest != null)
+                {
+                    mySQLRequest.UpdateGameCount(m_GameWinner.m_PlayerNumber, "n_win", opponentTank.m_PlayerNumber, "n_loss");
+                }
             }
             else
             {
