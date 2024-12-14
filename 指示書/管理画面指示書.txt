@@ -1,0 +1,65 @@
+管理画面を作成時にやってほしいこと一覧と管理画面ログインに必要なURL・メアド・パスワードに関して
+
+
+【管理画面作成時にやってほしいこと一覧】
+1. control_panelの中にターミナル(コマンドプロンプト)で移動する(yamlファイルがある場所)
+2. docker-compose up -d    //apache2+mysql+phpコンテナの作成
+3. docker exec -it php74-1 bash    //phpコンテナの中に移動
+4. a2enmod rewrite    //Laravelが必要とするmod_rewriteをapache2で有効化する
+5. vim /etc/apache2/sites-available/000-default.conf    ///etc/apache2/sites-available/000-default.confを開いて編集可にする(恐らくviと同じだと思う)
+
+----------------------------
+コマンドがなかったら
+apt-get update
+apt-get install -y vim less
+を実行してインストール
+----------------------------
+
+
+6. iを押してINSERTモードにして以下に示すようにDocumentRootを編集する(デフォルトでは/var/www/htmlになっているはず)
+
+<VirtualHost *:80>
+    ~~~~~~
+    ServerAdmin webmaster@localhost
+    DocumentRoot /var/www/html/admin/public    //ここを編集する！！
+
+    ~~~~~~
+</VirtualHost>
+
+7. escキーを押した後に:wqと打ってEnter    //変更を保存
+8. service apache2 restart    //サーバーをリスタート
+9. docker-compose up -d    //もう一度コンテナを立ち上げる
+
+この手順で管理画面が開けるはず！
+
+
+
+【管理画面ログイン関連】
+http://localhost/loginにアクセスしてみてください(ログインしたらhttp://localhost/dashboardに飛ぶはず)
+メアドとパスワードは以下のものを使ってください
+
+email: test@example.com
+password: iamadmin
+
+
+タブは必要なもの全てを作成していますが、今の段階で使用できるのはDashboard,Notices,Inquiriesの三つのみです。
+他のタブを押したら「指定されたタブは存在しません。」と表示されるはずです。
+
+
+
+
+【注意事項等】
+※ docker-compose up -dをしてコンテナを起動した状態でアクセスしてください
+※ mysql上にnotices,inquiriesテーブルが存在するか確認してください(もしくはタブを押して一覧が表示されるか確認してください)
+※ mysqlに入る時は以下のコマンドを実行してください
+----------------------------
+docker exec -it mysql8-1 bash
+mysql -u test_user -p
+test_password    //パスワード
+----------------------------
+
+※ Unity内で一覧が取得できているか、おかしな挙動がないか確認してください
+※ 何かエラーがあれば教えてください。対処します。
+
+
+
