@@ -89,7 +89,7 @@ namespace Complete
 
             if (myPlayerScoreText != null)
             {
-                myPlayerScoreText.text = $"Wins: {data.n_win} | Losses: {data.n_loss}";
+                myPlayerScoreText.text = $"Wins: {data.n_win}  Losses: {data.n_loss}";
             }
         }
         private void UpdateOpponentPlayerHUD(PlayerData data)
