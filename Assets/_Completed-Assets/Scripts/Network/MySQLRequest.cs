@@ -4,7 +4,7 @@ using System.Collections;
 
 public class MySQLRequest : MonoBehaviour
 {
-    [SerializeField] private string baseUrl = "http://your-server-ip:8080"; // サーバーURLとポートを設定
+    [SerializeField] private string baseUrl = "http://localhost:8080"; // サーバーURLとポートを設定
 
     // ゲーム結果更新API呼び出し
     public void UpdateGameCount(int userId1, string columnName1, int userId2, string columnName2)
