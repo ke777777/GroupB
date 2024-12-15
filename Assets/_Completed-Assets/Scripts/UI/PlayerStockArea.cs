@@ -3,16 +3,16 @@ using UnityEngine.UI;
 
 public class PlayerStockArea : MonoBehaviour
 {
-    [SerializeField] private Image[] shellImage = new Image[10]; // 1”­‚Ì–C’eƒAƒCƒRƒ“
-    [SerializeField] private Image[] shellImages = new Image[4]; // 10”­‚Ì–C’eƒAƒCƒRƒ“
-    [SerializeField] private Image[] mineImages = new Image[3];  // ’n—‹ƒAƒCƒRƒ“
+    [SerializeField] private Image[] shellImage = new Image[10]; // 1ï¿½ï¿½ï¿½Ì–Cï¿½eï¿½Aï¿½Cï¿½Rï¿½ï¿½
+    [SerializeField] private Image[] shellImages = new Image[4]; // 10ï¿½ï¿½ï¿½Ì–Cï¿½eï¿½Aï¿½Cï¿½Rï¿½ï¿½
+    [SerializeField] private Image[] mineImages = new Image[3];  // ï¿½nï¿½ï¿½ï¿½Aï¿½Cï¿½Rï¿½ï¿½
 
     /*
-        [SerializeField] private GridLayoutGroup shellGridLayout; // 1”­–C’eƒAƒCƒRƒ“‚ÌƒŒƒCƒAƒEƒg’²®—p
-        [SerializeField] private GridLayoutGroup tenShellGridLayout; // 10”­–C’eƒAƒCƒRƒ“‚ÌƒŒƒCƒAƒEƒg’²®—p
-        [SerializeField] private GridLayoutGroup mineGridLayout;  // ’n—‹ƒAƒCƒRƒ“‚ÌƒŒƒCƒAƒEƒg’²®—p
-        [SerializeField] private Vector2 baseResolution = new Vector2(1920, 1080); // Šî€‰ğ‘œ“x
-        [SerializeField] private float scaleFactor = 1.0f; // ƒXƒP[ƒ‹’²®—p‚Ì”{—¦
+        [SerializeField] private GridLayoutGroup shellGridLayout; // 1ï¿½ï¿½ï¿½Cï¿½eï¿½Aï¿½Cï¿½Rï¿½ï¿½ï¿½Ìƒï¿½ï¿½Cï¿½Aï¿½Eï¿½gï¿½ï¿½ï¿½ï¿½ï¿½p
+        [SerializeField] private GridLayoutGroup tenShellGridLayout; // 10ï¿½ï¿½ï¿½Cï¿½eï¿½Aï¿½Cï¿½Rï¿½ï¿½ï¿½Ìƒï¿½ï¿½Cï¿½Aï¿½Eï¿½gï¿½ï¿½ï¿½ï¿½ï¿½p
+        [SerializeField] private GridLayoutGroup mineGridLayout;  // ï¿½nï¿½ï¿½ï¿½Aï¿½Cï¿½Rï¿½ï¿½ï¿½Ìƒï¿½ï¿½Cï¿½Aï¿½Eï¿½gï¿½ï¿½ï¿½ï¿½ï¿½p
+        [SerializeField] private Vector2 baseResolution = new Vector2(1920, 1080); // ï¿½î€ï¿½ğ‘œ“x
+        [SerializeField] private float scaleFactor = 1.0f; // ï¿½Xï¿½Pï¿½[ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½pï¿½Ì”{ï¿½ï¿½
         [SerializeField] private RectTransform stock1Area;
         [SerializeField] private RectTransform stock10Area;
         [SerializeField] private RectTransform mineArea;
@@ -26,17 +26,17 @@ public class PlayerStockArea : MonoBehaviour
 
     private void Update()
     {
-        AdjustIconSize(); // –ˆƒtƒŒ[ƒ€A‰æ–ÊƒTƒCƒY‚É‰‚¶‚ÄƒAƒCƒRƒ“‚ÌƒTƒCƒY‚ÆŠÔŠu‚ğ’²®
+        AdjustIconSize(); // ï¿½ï¿½ï¿½tï¿½ï¿½ï¿½[ï¿½ï¿½ï¿½Aï¿½ï¿½ÊƒTï¿½Cï¿½Yï¿½É‰ï¿½ï¿½ï¿½ï¿½ÄƒAï¿½Cï¿½Rï¿½ï¿½ï¿½ÌƒTï¿½Cï¿½Yï¿½ÆŠÔŠuï¿½ğ’²ï¿½
     }
     private void AdjustLayout()
     {
-        // Stock1Area‚ğ¶Šñ‚¹
+        // Stock1Areaï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         stock1Area.anchoredPosition = new Vector2(-300, 0);
 
-        // Stock10Area‚ğ’†‰›‚É”z’u
+        // Stock10Areaï¿½ğ’†‰ï¿½ï¿½É”zï¿½u
         stock10Area.anchoredPosition = new Vector2(0, 0);
 
-        // MineArea‚ğ‰EŠñ‚¹
+        // MineAreaï¿½ï¿½ï¿½Eï¿½ï¿½
         mineArea.anchoredPosition = new Vector2(300, 0);
     }
     private void AdjustIconSize()
@@ -44,36 +44,36 @@ public class PlayerStockArea : MonoBehaviour
         float screenWidth = Screen.width;
         float screenHeight = Screen.height;
 
-        // ƒXƒNƒŠ[ƒ“‰ğ‘œ“x‚É‰‚¶‚½ƒXƒP[ƒ‹ŒvZ
+        // ï¿½Xï¿½Nï¿½ï¿½ï¿½[ï¿½ï¿½ï¿½ğ‘œ“xï¿½É‰ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Xï¿½Pï¿½[ï¿½ï¿½ï¿½vï¿½Z
         float scaleWidth = screenWidth / baseResolution.x;
         float scaleHeight = screenHeight / baseResolution.y;
         float scale = Mathf.Min(scaleWidth, scaleHeight) * scaleFactor;
-       // scale = Mathf.Max(scale, 0.93f); // ‘S‘Ì‚ÌƒXƒP[ƒ‹Å¬’l
-        // 1”­–C’eƒAƒCƒRƒ“‚ÌƒTƒCƒY‚ÆŠÔŠu‚ğ’²®
+       // scale = Mathf.Max(scale, 0.93f); // ï¿½Sï¿½Ì‚ÌƒXï¿½Pï¿½[ï¿½ï¿½ï¿½Åï¿½ï¿½l
+        // 1ï¿½ï¿½ï¿½Cï¿½eï¿½Aï¿½Cï¿½Rï¿½ï¿½ï¿½ÌƒTï¿½Cï¿½Yï¿½ÆŠÔŠuï¿½ğ’²ï¿½
         if (shellGridLayout != null)
         {
             shellGridLayout.cellSize = new Vector2(30, 60) * scale;
             shellGridLayout.spacing = new Vector2(5, 5) * scale;
             shellGridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-            shellGridLayout.constraintCount = 10; // 1s‚É10ŒÂ•À‚×‚é
+            shellGridLayout.constraintCount = 10; // 1ï¿½sï¿½ï¿½10ï¿½Â•ï¿½ï¿½×‚ï¿½
         }
 
-        // 10”­–C’eƒAƒCƒRƒ“‚ÌƒTƒCƒY‚ÆŠÔŠu‚ğ’²®
+        // 10ï¿½ï¿½ï¿½Cï¿½eï¿½Aï¿½Cï¿½Rï¿½ï¿½ï¿½ÌƒTï¿½Cï¿½Yï¿½ÆŠÔŠuï¿½ğ’²ï¿½
         if (tenShellGridLayout != null)
         {
             tenShellGridLayout.cellSize = new Vector2(30, 60) * scale;
             tenShellGridLayout.spacing = new Vector2(5, 5) * scale;
             tenShellGridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-            tenShellGridLayout.constraintCount = 4; // 1s‚É4ŒÂ•À‚×‚é
+            tenShellGridLayout.constraintCount = 4; // 1ï¿½sï¿½ï¿½4ï¿½Â•ï¿½ï¿½×‚ï¿½
         }
 
-        // ’n—‹ƒAƒCƒRƒ“‚ÌƒTƒCƒY‚ÆŠÔŠu‚ğ’²®
+        // ï¿½nï¿½ï¿½ï¿½Aï¿½Cï¿½Rï¿½ï¿½ï¿½ÌƒTï¿½Cï¿½Yï¿½ÆŠÔŠuï¿½ğ’²ï¿½
         if (mineGridLayout != null)
         {
             mineGridLayout.cellSize = new Vector2(50, 60) * scale;
             mineGridLayout.spacing = new Vector2(5, 5) * scale;
             mineGridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-            mineGridLayout.constraintCount = 3; // 1s‚É3ŒÂ•À‚×‚é
+            mineGridLayout.constraintCount = 3; // 1ï¿½sï¿½ï¿½3ï¿½Â•ï¿½ï¿½×‚ï¿½
         }
     } */
     public void UpdatePlayerStockArea(string weaponName, int currentStock)
@@ -88,11 +88,11 @@ public class PlayerStockArea : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("–¢’m‚Ì•Šíƒ^ƒCƒv: " + weaponName);
+            Debug.LogWarning("ï¿½ï¿½ï¿½mï¿½Ì•ï¿½ï¿½ï¿½^ï¿½Cï¿½v: " + weaponName);
         }
     }
 
-    // –C’eƒXƒgƒbƒN‚ÌUI‚ğXV
+    // ï¿½Cï¿½eï¿½Xï¿½gï¿½bï¿½Nï¿½ï¿½UIï¿½ï¿½ï¿½Xï¿½V
     private void UpdateShellStock(int stockCount)
     {
         int tensPlace = 0;
@@ -108,7 +108,7 @@ public class PlayerStockArea : MonoBehaviour
             onesPlace = stockCount - tensPlace * 10;
         }
 
-        // 10”­ƒAƒCƒRƒ“‚Ì•\¦‚ğXV
+        // 10ï¿½ï¿½ï¿½Aï¿½Cï¿½Rï¿½ï¿½ï¿½Ì•\ï¿½ï¿½ï¿½ï¿½ï¿½Xï¿½V
         for (int i = 0; i < shellImages.Length; i++)
         {
             if (shellImages[i] != null)
@@ -117,11 +117,11 @@ public class PlayerStockArea : MonoBehaviour
             }
             else
             {
-                Debug.LogWarning("shellImages‚Ì—v‘f‚ªnull‚Å‚·B");
+                Debug.LogWarning("shellImagesï¿½Ì—vï¿½fï¿½ï¿½nullï¿½Å‚ï¿½ï¿½B");
             }
         }
 
-        // 1”­ƒAƒCƒRƒ“‚Ì•\¦‚ğXV
+        // 1ï¿½ï¿½ï¿½Aï¿½Cï¿½Rï¿½ï¿½ï¿½Ì•\ï¿½ï¿½ï¿½ï¿½ï¿½Xï¿½V
         for (int i = 0; i < shellImage.Length; i++)
         {
             if (shellImage[i] != null)
@@ -130,12 +130,12 @@ public class PlayerStockArea : MonoBehaviour
             }
             else
             {
-                Debug.LogWarning("shellImage‚Ì—v‘f‚ªnull‚Å‚·B");
+                Debug.LogWarning("shellImageï¿½Ì—vï¿½fï¿½ï¿½nullï¿½Å‚ï¿½ï¿½B");
             }
         }
     }
 
-    // ’n—‹ƒXƒgƒbƒN‚ÌUI‚ğXV
+    // ï¿½nï¿½ï¿½ï¿½Xï¿½gï¿½bï¿½Nï¿½ï¿½UIï¿½ï¿½ï¿½Xï¿½V
     private void UpdateMineStock(int stockCount)
     {
         for (int i = 0; i < mineImages.Length; i++)
@@ -146,7 +146,7 @@ public class PlayerStockArea : MonoBehaviour
             }
             else
             {
-                Debug.LogWarning("mineImages‚Ì—v‘f‚ªnull‚Å‚·B");
+                Debug.LogWarning("mineImagesï¿½Ì—vï¿½fï¿½ï¿½nullï¿½Å‚ï¿½ï¿½B");
             }
         }
     }

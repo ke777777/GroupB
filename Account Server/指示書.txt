@@ -1,0 +1,13 @@
+(1)Account Serverをデスクトップ直下に配置
+以下をコマンドプロンプトで実行
+(2)cd "$env:USERPROFILE\Desktop\Account Server"　//Account Serverファイルの中に入る
+(3)docker-compose up -d　//ネットワークを構成
+ここで少し時間をおく(裏でダウンロードしているので)
+(4)docker exec -it centos-container bash -c "cd /python-files && python3 account_server.py"　//ファイルの実行
+使い終わったら以下を実行
+(5)docker-compose down -v
+
+ファイルの説明：
+pythonにはサーバーファイルが入っている
+sqlはデータベース関係のファイル
+Connecting two containersはcentosコンテナの設定をいじるためのファイルが入っている
