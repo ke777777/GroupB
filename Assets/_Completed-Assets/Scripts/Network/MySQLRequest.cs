@@ -13,17 +13,10 @@ public class MySQLRequest : MonoBehaviour
         StartCoroutine(SendRequest(url));
     }
 
-    // ユーザー名更新API呼び出し
-    public void UpdateUserName(int userId, string newUserName)
-    {
-        string url = $"{baseUrl}/update_user_name?user_id={userId}&user_name={newUserName}";
-        StartCoroutine(SendRequest(url));
-    }
-
     // プレイヤーデータ取得API呼び出し
     public void GetPlayerData(int userId, System.Action<PlayerData> onSuccess, System.Action<string> onError = null)
     {
-        string url = $"{baseUrl}/get_column_value?user_id={userId}&column_name=all"; // プレイヤーデータを一括取得
+        string url = $"{baseUrl}/get_column_value?user_id={userId}&column_name=all";
         StartCoroutine(SendPlayerDataRequest(url, onSuccess, onError));
     }
 
@@ -36,25 +29,28 @@ public class MySQLRequest : MonoBehaviour
 
             if (request.result == UnityWebRequest.Result.Success)
             {
-                Debug.Log("Request Successful: " + request.downloadHandler.text);
+                Debug.Log($"Request Successful: {request.downloadHandler.text}");
             }
             else
             {
-                Debug.LogError("Request Failed: " + request.error);
+                Debug.LogError($"Request Failed: {request.error}");
             }
         }
     }
 
     private IEnumerator SendPlayerDataRequest(string url, System.Action<PlayerData> onSuccess, System.Action<string> onError)
     {
+        Debug.Log($"Sending request to: {url}");
         using (UnityWebRequest request = UnityWebRequest.Get(url))
         {
             yield return request.SendWebRequest();
 
             if (request.result == UnityWebRequest.Result.Success)
             {
+                Debug.Log($"Request Successful: {request.downloadHandler.text}");
                 try
                 {
+                    // JSON データを PlayerData に変換
                     PlayerData data = JsonUtility.FromJson<PlayerData>(request.downloadHandler.text);
                     onSuccess?.Invoke(data);
                 }
@@ -66,7 +62,7 @@ public class MySQLRequest : MonoBehaviour
             }
             else
             {
-                Debug.LogError("Request Failed: " + request.error);
+                Debug.LogError($"Request Failed: {request.error}");
                 onError?.Invoke(request.error);
             }
         }
