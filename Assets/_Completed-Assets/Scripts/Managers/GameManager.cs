@@ -555,22 +555,11 @@ namespace Complete
                 photonView.RPC(nameof(ShowEndMessageRPC), RpcTarget.All);
 
                 // 5ラウンド先取でゲーム終了の場合、ここで勝敗が確定
-                if (m_GameWinner != null)
+                // m_GameWinnerがいる場合、データベースへ結果送信
+                TankManager opponentTank = m_Tanks.FirstOrDefault(t => t.m_PlayerNumber != m_RoundWinner.m_PlayerNumber);
+                if (m_GameWinner != null && opponentTank != null && mySQLRequest != null)
                 {
-                    // マスタークライアントでデータベース更新（必要なら）
-                    if (PhotonNetwork.IsMasterClient && mySQLRequest != null)
-                    {
-                        // m_GameWinnerがいる場合、データベースへ結果送信
-                        TankManager opponentTank = m_Tanks.FirstOrDefault(t => t.m_PlayerNumber != m_RoundWinner.m_PlayerNumber);
-                        if (m_GameWinner != null && opponentTank != null && mySQLRequest != null)
-                        {
-                            mySQLRequest.UpdateGameCount(m_GameWinner.m_PlayerNumber, "n_win", opponentTank.m_PlayerNumber, "n_loss");
-                        }
-                    }
-                    m_MessageText.text = $"{m_GameWinner.m_ColoredPlayerText} WINS THE GAME!";
-                    yield return m_EndWait;
-                    PhotonNetwork.LoadLevel(SceneNames.TitleScene);
-                    yield break;
+                    mySQLRequest.UpdateGameCount(m_GameWinner.m_PlayerNumber, "n_win", opponentTank.m_PlayerNumber, "n_loss");
                 }
             }
             else
@@ -589,17 +578,23 @@ namespace Complete
 
             DestroyAllMines();
 
-            /*if (m_GameWinner != null)
+            if (m_GameWinner != null)
             {
                 m_MessageText.text = $"{m_GameWinner.m_ColoredPlayerText} WINS THE GAME!";
                 yield return m_EndWait;
-                PhotonNetwork.LoadLevel(SceneNames.TitleScene);
+                photonView.RPC("GoBackToTitle", RpcTarget.All);
                 yield break;
-            }*/
-
+            }
             // Wait for the specified length of time until yielding control back to the game loop.
             yield return m_EndWait;
         }
+
+        [PunRPC]
+        private void GoBackToTitle()
+        {
+            PhotonNetwork.LoadLevel(SceneNames.TitleScene);
+        }
+
 
         [PunRPC]
         private void ShowEndMessageRPC()
