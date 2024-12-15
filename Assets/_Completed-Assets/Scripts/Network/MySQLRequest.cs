@@ -16,7 +16,7 @@ public class MySQLRequest : MonoBehaviour
     // プレイヤーデータ取得API呼び出し
     public void GetPlayerData(int userId, System.Action<PlayerData> onSuccess, System.Action<string> onError = null)
     {
-        string url = $"{baseUrl}/get_column_value?user_id={userId}&column_name=all";
+        string url = $"{baseUrl}/get_column_value?user_id={userId}&column_name=user_name";
         StartCoroutine(SendPlayerDataRequest(url, onSuccess, onError));
     }
 
