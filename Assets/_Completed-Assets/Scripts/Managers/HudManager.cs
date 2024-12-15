@@ -52,10 +52,24 @@ namespace Complete
             if (mySQLRequest != null)
             {
                 // 自分のプレイヤーデータを取得
-                mySQLRequest.GetPlayerData(myPlayerNumber, UpdateMyPlayerHUD, HandleError);
+                mySQLRequest.GetPlayerData(myPlayerNumber, response =>
+                {
+                    if (myPlayerName != null)
+                    {
+                        myPlayerName.text = $"Name: {response}";
+                    }
+                }, HandleError);
+
 
                 // 相手のプレイヤーデータを取得
-                mySQLRequest.GetPlayerData(opponentPlayerNumber, UpdateOpponentPlayerHUD, HandleError);
+                mySQLRequest.GetPlayerData(opponentPlayerNumber, response =>
+                {
+                    if (opponentPlayerName != null)
+                    {
+                        opponentPlayerName.text = $"Name: {response}";
+                    }
+                }, HandleError);
+
             }
 
 
