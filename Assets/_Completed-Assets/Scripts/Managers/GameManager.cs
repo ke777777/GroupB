@@ -580,9 +580,9 @@ namespace Complete
 
             if (m_GameWinner != null)
             {
-                m_MessageText.text = $"{m_GameWinner.m_ColoredPlayerText} WINS THE GAME!";
+                photonView.RPC(nameof(ShowFinalWinnerMessageRPC), RpcTarget.All, m_GameWinner.m_PlayerNumber);
                 yield return m_EndWait;
-                photonView.RPC("GoBackToTitle", RpcTarget.All);
+                photonView.RPC(nameof(GoBackToTitle), RpcTarget.All);
                 yield break;
             }
             // Wait for the specified length of time until yielding control back to the game loop.
@@ -622,7 +622,15 @@ namespace Complete
                 CountWinsManager.Instance.UpdateWinStars(); // Ÿ—˜”‚Ì•\Ž¦‚ðXV
             }
         }
-
+        [PunRPC]
+        private void ShowFinalWinnerMessageRPC(int winnerPlayerNumber)
+        {
+            TankManager winner = m_Tanks.FirstOrDefault(t => t.m_PlayerNumber == winnerPlayerNumber);
+            if (winner != null)
+            {
+                m_MessageText.text = $"{winner.m_ColoredPlayerText} WINS THE GAME!";
+            }
+        }
         public void IncrementWinCount(int playerNumber)
         {
             if (!PhotonNetwork.IsMasterClient)
