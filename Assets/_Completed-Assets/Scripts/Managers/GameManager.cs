@@ -547,7 +547,7 @@ namespace Complete
 
             // See if there is a winner now the round is over.
             m_RoundWinner = GetRoundWinner();
-            if (PhotonNetwork.IsMasterClient && m_RoundWinner != null)
+            if (m_RoundWinner != null)
             {
                 // 勝利数を先にインクリメントし、その後少し待ってRPC反映を促す
                 IncrementWinCount(m_RoundWinner.m_PlayerNumber);
@@ -568,6 +568,7 @@ namespace Complete
                 string message = EndMessage();
                 m_MessageText.text = message;
             }
+
             // Now the winner's score has been incremented, see if someone has one the game.
             m_GameWinner = GetGameWinner();
             if (CountWinsManager.Instance != null)
