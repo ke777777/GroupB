@@ -570,14 +570,17 @@ namespace Complete
 
             DestroyAllMines();
 
-            if (m_GameWinner != null && PhotonNetwork.IsMasterClient)
+            if (m_GameWinner != null)
             {
-                // ŸÒ‚Æ”sÒ‚ğ“Á’è
-                TankManager opponentTank = m_Tanks.FirstOrDefault(t => t.m_PlayerNumber != m_GameWinner.m_PlayerNumber);
-                if (opponentTank != null && mySQLRequest != null)
+                if (PhotonNetwork.IsMasterClient)
                 {
-                    // ‚±‚±‚Å‰‚ß‚ÄMySQL‚ÉŸ”s”‚ğ”½‰f
-                    mySQLRequest.UpdateGameCount(m_GameWinner.m_PlayerNumber, "n_win", opponentTank.m_PlayerNumber, "n_loss");
+                    // ŸÒ‚Æ”sÒ‚ğ“Á’è
+                    TankManager opponentTank = m_Tanks.FirstOrDefault(t => t.m_PlayerNumber != m_GameWinner.m_PlayerNumber);
+                    if (opponentTank != null && mySQLRequest != null)
+                    {
+                        // ‚±‚±‚Å‰‚ß‚ÄMySQL‚ÉŸ”s”‚ğ”½‰f
+                        mySQLRequest.UpdateGameCount(m_GameWinner.m_PlayerNumber, "n_win", opponentTank.m_PlayerNumber, "n_loss");
+                    }
                 }
                 photonView.RPC(nameof(ShowFinalWinnerMessageRPC), RpcTarget.All, m_GameWinner.m_PlayerNumber);
                 yield return m_EndWait;
