@@ -41,7 +41,7 @@ public class MiniMapMineIcon : MonoBehaviourPun
             child.gameObject.layer = layer;
         }
     }
-    private void Update()
+    /*private void Update()
     {
         UpdateIconVisibility();
     }
@@ -59,6 +59,7 @@ public class MiniMapMineIcon : MonoBehaviourPun
 
         skullInstance.SetActive(!isOutsideView);
     }
+    */
 
     private void OnDestroy()
     {
