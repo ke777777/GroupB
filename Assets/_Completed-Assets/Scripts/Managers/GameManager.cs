@@ -398,10 +398,11 @@ namespace Complete
             TankManager opponentTank = m_Tanks.FirstOrDefault(t => t.m_PlayerNumber != myTank.m_PlayerNumber);
 
             // 勝敗データを更新 (myTankが勝者)
-            if (mySQLRequest != null && PhotonNetwork.IsMasterClient && myTank != null && opponentTank != null)
+            /*if (mySQLRequest != null && PhotonNetwork.IsMasterClient && myTank != null && opponentTank != null)
             {
                 mySQLRequest.UpdateGameCount(myTank.m_PlayerNumber, "n_win", opponentTank.m_PlayerNumber, "n_loss");
             }
+            */
             StartCoroutine(HandlePlayerLeft()); // 5秒後にタイトル画面に戻る
         }
 
