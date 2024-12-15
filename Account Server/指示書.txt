@@ -6,3 +6,8 @@
 (4)docker exec -it centos-container bash -c "cd /python-files && python3 account_server.py"　//ファイルの実行
 使い終わったら以下を実行
 (5)docker-compose down -v
+
+ファイルの説明：
+pythonにはサーバーファイルが入っている
+sqlはデータベース関係のファイル
+Connecting two containersはcentosコンテナの設定をいじるためのファイルが入っている
