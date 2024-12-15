@@ -553,14 +553,6 @@ namespace Complete
                 IncrementWinCount(m_RoundWinner.m_PlayerNumber);
 
                 photonView.RPC(nameof(ShowEndMessageRPC), RpcTarget.All);
-
-                // 5ラウンド先取でゲーム終了の場合、ここで勝敗が確定
-                // m_GameWinnerがいる場合、データベースへ結果送信
-                TankManager opponentTank = m_Tanks.FirstOrDefault(t => t.m_PlayerNumber != m_RoundWinner.m_PlayerNumber);
-                if (m_GameWinner != null && opponentTank != null && mySQLRequest != null)
-                {
-                    mySQLRequest.UpdateGameCount(m_GameWinner.m_PlayerNumber, "n_win", opponentTank.m_PlayerNumber, "n_loss");
-                }
             }
             else
             {
@@ -578,8 +570,15 @@ namespace Complete
 
             DestroyAllMines();
 
-            if (m_GameWinner != null)
+            if (m_GameWinner != null && PhotonNetwork.IsMasterClient)
             {
+                // 勝者と敗者を特定
+                TankManager opponentTank = m_Tanks.FirstOrDefault(t => t.m_PlayerNumber != m_GameWinner.m_PlayerNumber);
+                if (opponentTank != null && mySQLRequest != null)
+                {
+                    // ここで初めてMySQLに勝敗数を反映
+                    mySQLRequest.UpdateGameCount(m_GameWinner.m_PlayerNumber, "n_win", opponentTank.m_PlayerNumber, "n_loss");
+                }
                 photonView.RPC(nameof(ShowFinalWinnerMessageRPC), RpcTarget.All, m_GameWinner.m_PlayerNumber);
                 yield return m_EndWait;
                 photonView.RPC(nameof(GoBackToTitle), RpcTarget.All);
