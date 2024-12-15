@@ -398,10 +398,11 @@ namespace Complete
             TankManager opponentTank = m_Tanks.FirstOrDefault(t => t.m_PlayerNumber != myTank.m_PlayerNumber);
 
             // 勝敗データを更新 (myTankが勝者)
-            if (mySQLRequest != null && PhotonNetwork.IsMasterClient && myTank != null && opponentTank != null)
+            /*if (mySQLRequest != null && PhotonNetwork.IsMasterClient && myTank != null && opponentTank != null)
             {
                 mySQLRequest.UpdateGameCount(myTank.m_PlayerNumber, "n_win", opponentTank.m_PlayerNumber, "n_loss");
             }
+            */
             StartCoroutine(HandlePlayerLeft()); // 5秒後にタイトル画面に戻る
         }
 
@@ -546,20 +547,12 @@ namespace Complete
 
             // See if there is a winner now the round is over.
             m_RoundWinner = GetRoundWinner();
-            if (PhotonNetwork.IsMasterClient && m_RoundWinner != null)
+            if (m_RoundWinner != null)
             {
                 // 勝利数を先にインクリメントし、その後少し待ってRPC反映を促す
                 IncrementWinCount(m_RoundWinner.m_PlayerNumber);
 
                 photonView.RPC(nameof(ShowEndMessageRPC), RpcTarget.All);
-
-                // 5ラウンド先取でゲーム終了の場合、ここで勝敗が確定
-                // m_GameWinnerがいる場合、データベースへ結果送信
-                TankManager opponentTank = m_Tanks.FirstOrDefault(t => t.m_PlayerNumber != m_RoundWinner.m_PlayerNumber);
-                if (m_GameWinner != null && opponentTank != null && mySQLRequest != null)
-                {
-                    mySQLRequest.UpdateGameCount(m_GameWinner.m_PlayerNumber, "n_win", opponentTank.m_PlayerNumber, "n_loss");
-                }
             }
             else
             {
@@ -567,6 +560,7 @@ namespace Complete
                 string message = EndMessage();
                 m_MessageText.text = message;
             }
+
             // Now the winner's score has been incremented, see if someone has one the game.
             m_GameWinner = GetGameWinner();
             if (CountWinsManager.Instance != null)
@@ -578,14 +572,31 @@ namespace Complete
 
             if (m_GameWinner != null)
             {
-                m_MessageText.text = $"{m_GameWinner.m_ColoredPlayerText} WINS THE GAME!";
+                if (PhotonNetwork.IsMasterClient)
+                {
+                    // 勝者と敗者を特定
+                    TankManager opponentTank = m_Tanks.FirstOrDefault(t => t.m_PlayerNumber != m_GameWinner.m_PlayerNumber);
+                    if (opponentTank != null && mySQLRequest != null)
+                    {
+                        // ここで初めてMySQLに勝敗数を反映
+                        mySQLRequest.UpdateGameCount(m_GameWinner.m_PlayerNumber, "n_win", opponentTank.m_PlayerNumber, "n_loss");
+                    }
+                }
+                photonView.RPC(nameof(ShowFinalWinnerMessageRPC), RpcTarget.All, m_GameWinner.m_PlayerNumber);
                 yield return m_EndWait;
-                PhotonNetwork.LoadLevel(SceneNames.TitleScene);
+                photonView.RPC(nameof(GoBackToTitle), RpcTarget.All);
                 yield break;
             }
             // Wait for the specified length of time until yielding control back to the game loop.
             yield return m_EndWait;
         }
+
+        [PunRPC]
+        private void GoBackToTitle()
+        {
+            PhotonNetwork.LoadLevel(SceneNames.TitleScene);
+        }
+
 
         [PunRPC]
         private void ShowEndMessageRPC()
@@ -613,7 +624,15 @@ namespace Complete
                 CountWinsManager.Instance.UpdateWinStars(); // 勝利数の表示を更新
             }
         }
-
+        [PunRPC]
+        private void ShowFinalWinnerMessageRPC(int winnerPlayerNumber)
+        {
+            TankManager winner = m_Tanks.FirstOrDefault(t => t.m_PlayerNumber == winnerPlayerNumber);
+            if (winner != null)
+            {
+                m_MessageText.text = $"{winner.m_ColoredPlayerText} WINS THE GAME!";
+            }
+        }
         public void IncrementWinCount(int playerNumber)
         {
             if (!PhotonNetwork.IsMasterClient)
