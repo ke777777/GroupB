@@ -12,8 +12,7 @@ namespace Complete
         [SerializeField] private MySQLRequest mySQLRequest; // MySQLRequestを参照
         [SerializeField] private Text myPlayerName;
         [SerializeField] private Text opponentPlayerName;
-        [SerializeField] private Text myPlayerScoreText; // 自分のスコア表示用
-        [SerializeField] private Text opponentPlayerScoreText; // 相手のスコア表示用
+
         private int myPlayerNumber;
         private int opponentPlayerNumber;
 
@@ -84,24 +83,14 @@ namespace Complete
             {
                 myPlayerName.text = $"Name: {data.user_name}";
                 myPlayerName.color = GetPlayerColor(myPlayerNumber);
-
-            }
-
-            if (myPlayerScoreText != null)
-            {
-                myPlayerScoreText.text = $"Wins: {data.n_win}  Losses: {data.n_loss}";
             }
         }
+
         private void UpdateOpponentPlayerHUD(PlayerData data)
         {
             if (opponentPlayerName != null)
             {
                 opponentPlayerName.text = $"Name: {data.user_name}";
-            }
-
-            if (opponentPlayerScoreText != null)
-            {
-                opponentPlayerScoreText.text = $"Wins: {data.n_win} | Losses: {data.n_loss}";
             }
         }
         private void HandleError(string error)
