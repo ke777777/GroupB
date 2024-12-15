@@ -1,18 +1,23 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
-using UnityEngine.SceneManagement;
+using UnityEngine.UI; // ボタンのUIを扱うため
+using UnityEngine.SceneManagement; // シーン遷移のため
+
 public class VersusPlayerButton : MonoBehaviour
 {
-   [SerializeField]private Button versusPlayerButton;
+    [SerializeField] 
+    private Button versusPlayerButton; // Buttonコンポーネントを参照するための変数
 
-    void Start()
+    private void Start()
     {
+        // ボタンがクリックされたときにOnClickedメソッドを登録
         versusPlayerButton.onClick.AddListener(OnClicked);
     }
- private void OnClicked()
+
+    private void OnClicked()
     {
-        SceneManager.LoadScene(SceneNames.CompleteGameScene);
+        // ホーム画面へ遷移
+        SceneManager.LoadScene(SceneNames.CompleteGame);
     }
 }
