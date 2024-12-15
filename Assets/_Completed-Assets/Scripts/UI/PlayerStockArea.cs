@@ -1,61 +1,152 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Complete
+public class PlayerStockArea : MonoBehaviour
 {
-    public class PlayerStockArea : MonoBehaviour
+    [SerializeField] private Image[] shellImage = new Image[10]; // 1���̖C�e�A�C�R��
+    [SerializeField] private Image[] shellImages = new Image[4]; // 10���̖C�e�A�C�R��
+    [SerializeField] private Image[] mineImages = new Image[3];  // �n���A�C�R��
+
+    /*
+        [SerializeField] private GridLayoutGroup shellGridLayout; // 1���C�e�A�C�R���̃��C�A�E�g�����p
+        [SerializeField] private GridLayoutGroup tenShellGridLayout; // 10���C�e�A�C�R���̃��C�A�E�g�����p
+        [SerializeField] private GridLayoutGroup mineGridLayout;  // �n���A�C�R���̃��C�A�E�g�����p
+        [SerializeField] private Vector2 baseResolution = new Vector2(1920, 1080); // ��𑜓x
+        [SerializeField] private float scaleFactor = 1.0f; // �X�P�[�������p�̔{��
+        [SerializeField] private RectTransform stock1Area;
+        [SerializeField] private RectTransform stock10Area;
+        [SerializeField] private RectTransform mineArea;
+    */
+
+    /*private void Start()
     {
-        [SerializeField] private Image[] shells; // Shell1, Shell2, ..., Shell10
-        [SerializeField] private Image[] shells10; // Shells10, Shells20, Shells30, Shells40
+        AdjustLayout();
+        AdjustIconSize();
+    }
 
-        // 砲弾のストック数を引数に、UIを更新するメソッド
-        public void UpdatePlayerStockArea(int stockCount)
+    private void Update()
+    {
+        AdjustIconSize(); // ���t���[���A��ʃT�C�Y�ɉ����ăA�C�R���̃T�C�Y�ƊԊu�𒲐�
+    }
+    private void AdjustLayout()
+    {
+        // Stock1Area������
+        stock1Area.anchoredPosition = new Vector2(-300, 0);
+
+        // Stock10Area�𒆉��ɔz�u
+        stock10Area.anchoredPosition = new Vector2(0, 0);
+
+        // MineArea���E��
+        mineArea.anchoredPosition = new Vector2(300, 0);
+    }
+    private void AdjustIconSize()
+    {
+        float screenWidth = Screen.width;
+        float screenHeight = Screen.height;
+
+        // �X�N���[���𑜓x�ɉ������X�P�[���v�Z
+        float scaleWidth = screenWidth / baseResolution.x;
+        float scaleHeight = screenHeight / baseResolution.y;
+        float scale = Mathf.Min(scaleWidth, scaleHeight) * scaleFactor;
+       // scale = Mathf.Max(scale, 0.93f); // �S�̂̃X�P�[���ŏ��l
+        // 1���C�e�A�C�R���̃T�C�Y�ƊԊu�𒲐�
+        if (shellGridLayout != null)
         {
-            // stockCountが負にならないようにする
-            stockCount = Mathf.Max(stockCount, 0);
+            shellGridLayout.cellSize = new Vector2(30, 60) * scale;
+            shellGridLayout.spacing = new Vector2(5, 5) * scale;
+            shellGridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+            shellGridLayout.constraintCount = 10; // 1�s��10���ׂ�
+        }
 
-            // 1の位と10の位を取得
-            int onesPlace = stockCount % 10; // 1の位
-            int tensPlace = stockCount / 10;  // 10の位
+        // 10���C�e�A�C�R���̃T�C�Y�ƊԊu�𒲐�
+        if (tenShellGridLayout != null)
+        {
+            tenShellGridLayout.cellSize = new Vector2(30, 60) * scale;
+            tenShellGridLayout.spacing = new Vector2(5, 5) * scale;
+            tenShellGridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+            tenShellGridLayout.constraintCount = 4; // 1�s��4���ׂ�
+        }
 
-            // 条件に基づいて表示を決定
-            if (stockCount == 0)
+        // �n���A�C�R���̃T�C�Y�ƊԊu�𒲐�
+        if (mineGridLayout != null)
+        {
+            mineGridLayout.cellSize = new Vector2(50, 60) * scale;
+            mineGridLayout.spacing = new Vector2(5, 5) * scale;
+            mineGridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+            mineGridLayout.constraintCount = 3; // 1�s��3���ׂ�
+        }
+    } */
+    public void UpdatePlayerStockArea(string weaponName, int currentStock)
+    {
+        if (weaponName == "Shell")
+        {
+            UpdateShellStock(currentStock);
+        }
+        else if (weaponName == "Mine")
+        {
+            UpdateMineStock(currentStock);
+        }
+        else
+        {
+            Debug.LogWarning("���m�̕���^�C�v: " + weaponName);
+        }
+    }
+
+    // �C�e�X�g�b�N��UI���X�V
+    private void UpdateShellStock(int stockCount)
+    {
+        int tensPlace = 0;
+        int onesPlace = 0;
+
+        if (stockCount <= 10)
+        {
+            onesPlace = stockCount;
+        }
+        else
+        {
+            tensPlace = (stockCount - 1) / 10;
+            onesPlace = stockCount - tensPlace * 10;
+        }
+
+        // 10���A�C�R���̕\�����X�V
+        for (int i = 0; i < shellImages.Length; i++)
+        {
+            if (shellImages[i] != null)
             {
-                // ストック数が0の場合
-                for (int i = 0; i < shells.Length; i++)
-                {
-                    shells[i].gameObject.SetActive(false);
-                }
-                for (int i = 0; i < shells10.Length; i++)
-                {
-                    shells10[i].gameObject.SetActive(false);
-                }
-            }
-            else if (onesPlace == 0)
-            {
-                // 1の位が0の場合
-                for (int i = 0; i < shells.Length; i++)
-                {
-                    shells[i].gameObject.SetActive(i < 10);
-                }
-                for (int i = 0; i < shells10.Length; i++)
-                {
-                    shells10[i].gameObject.SetActive(i < tensPlace - 1);
-                }
+                shellImages[i].gameObject.SetActive(i < tensPlace);
             }
             else
             {
-                // 1の位が0でない場合
-                for (int i = 0; i < shells.Length; i++)
-                {
-                    shells[i].gameObject.SetActive(i < onesPlace);
-                }
-                for (int i = 0; i < shells10.Length; i++)
-                {
-                    shells10[i].gameObject.SetActive(i < tensPlace);
-                }
+                Debug.LogWarning("shellImages�̗v�f��null�ł��B");
+            }
+        }
+
+        // 1���A�C�R���̕\�����X�V
+        for (int i = 0; i < shellImage.Length; i++)
+        {
+            if (shellImage[i] != null)
+            {
+                shellImage[i].gameObject.SetActive(i < onesPlace);
+            }
+            else
+            {
+                Debug.LogWarning("shellImage�̗v�f��null�ł��B");
+            }
+        }
+    }
+
+    // �n���X�g�b�N��UI���X�V
+    private void UpdateMineStock(int stockCount)
+    {
+        for (int i = 0; i < mineImages.Length; i++)
+        {
+            if (mineImages[i] != null)
+            {
+                mineImages[i].gameObject.SetActive(i < stockCount);
+            }
+            else
+            {
+                Debug.LogWarning("mineImages�̗v�f��null�ł��B");
             }
         }
     }

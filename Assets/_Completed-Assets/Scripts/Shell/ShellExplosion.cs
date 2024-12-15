@@ -1,8 +1,9 @@
 using UnityEngine;
+using Photon.Pun;
 
 namespace Complete
 {
-    public class ShellExplosion : MonoBehaviour
+    public class ShellExplosion : MonoBehaviourPun, IPunInstantiateMagicCallback
     {
         public LayerMask m_TankMask;                        // Used to filter what the explosion affects, this should be set to "Players".
         public ParticleSystem m_ExplosionParticles;         // Reference to the particles that will play on explosion.
@@ -12,44 +13,66 @@ namespace Complete
         public float m_MaxLifeTime = 2f;                    // The time in seconds before the shell is removed.
         public float m_ExplosionRadius = 5f;                // The maximum distance away from the explosion tanks can be and are still affected.
 
+        public bool isMine = false;
+        private bool isDamageActive = false;
 
-        private void Start ()
+        private float m_LaunchForce;
+
+        private void Start()
         {
+            // 地雷の場合のみクールタイムを設定
+            if (isMine == true)
+            {
+                Invoke(nameof(ActivateDamage), 3.0f); // 3秒後にダメージを有効化
+            }
             // If it isn't destroyed by then, destroy the shell after it's lifetime.
-            Destroy (gameObject, m_MaxLifeTime);
+            Destroy(gameObject, m_MaxLifeTime);
+        }
+        private void ActivateDamage()
+        {
+            isDamageActive = true;
         }
 
 
-        private void OnTriggerEnter (Collider other)
+        private void OnTriggerEnter(Collider other)
         {
-			// Collect all the colliders in a sphere from the shell's current position to a radius of the explosion radius.
-            Collider[] colliders = Physics.OverlapSphere (transform.position, m_ExplosionRadius, m_TankMask);
+            if (isMine && !isDamageActive)
+            {
+                return;
+            }
+            photonView.RPC("RPC_Explode", RpcTarget.All);
+        }
+        [PunRPC]
+        private void RPC_Explode()
+        {
+            // Collect all the colliders in a sphere from the shell's current position to a radius of the explosion radius.
+            Collider[] colliders = Physics.OverlapSphere(transform.position, m_ExplosionRadius, m_TankMask);
 
             // Go through all the colliders...
             for (int i = 0; i < colliders.Length; i++)
             {
                 // ... and find their rigidbody.
-                Rigidbody targetRigidbody = colliders[i].GetComponent<Rigidbody> ();
+                Rigidbody targetRigidbody = colliders[i].GetComponent<Rigidbody>();
 
                 // If they don't have a rigidbody, go on to the next collider.
                 if (!targetRigidbody)
                     continue;
 
                 // Add an explosion force.
-                targetRigidbody.AddExplosionForce (m_ExplosionForce, transform.position, m_ExplosionRadius);
+                targetRigidbody.AddExplosionForce(m_ExplosionForce, transform.position, m_ExplosionRadius);
 
                 // Find the TankHealth script associated with the rigidbody.
-                TankHealth targetHealth = targetRigidbody.GetComponent<TankHealth> ();
+                TankHealth targetHealth = targetRigidbody.GetComponent<TankHealth>();
 
                 // If there is no TankHealth script attached to the gameobject, go on to the next collider.
                 if (!targetHealth)
                     continue;
 
                 // Calculate the amount of damage the target should take based on it's distance from the shell.
-                float damage = CalculateDamage (targetRigidbody.position);
+                float damage = CalculateDamage(targetRigidbody.position);
 
                 // Deal this damage to the tank.
-                targetHealth.TakeDamage (damage);
+                targetHealth.TakeDamage(damage);
             }
 
             // Unparent the particles from the shell.
@@ -63,14 +86,13 @@ namespace Complete
 
             // Once the particles have finished, destroy the gameobject they are on.
             ParticleSystem.MainModule mainModule = m_ExplosionParticles.main;
-            Destroy (m_ExplosionParticles.gameObject, mainModule.duration);
+            Destroy(m_ExplosionParticles.gameObject, mainModule.duration);
 
             // Destroy the shell.
-            Destroy (gameObject);
+            Destroy(gameObject);
         }
 
-
-        private float CalculateDamage (Vector3 targetPosition)
+        private float CalculateDamage(Vector3 targetPosition)
         {
             // Create a vector from the shell to the target.
             Vector3 explosionToTarget = targetPosition - transform.position;
@@ -85,9 +107,19 @@ namespace Complete
             float damage = relativeDistance * m_MaxDamage;
 
             // Make sure that the minimum damage is always 0.
-            damage = Mathf.Max (0f, damage);
+            damage = Mathf.Max(0f, damage);
 
             return damage;
+        }
+        public void OnPhotonInstantiate(PhotonMessageInfo info)
+        {
+            object[] initData = photonView.InstantiationData;
+            if (initData != null && initData.Length >= 2)
+            {
+                m_LaunchForce = (float)initData[1]; // 発射力を取得。
+                Rigidbody rb = GetComponent<Rigidbody>();
+                rb.velocity = transform.forward * m_LaunchForce; // 発射力を使用して速度を設定。
+            }
         }
     }
 }
