@@ -23,14 +23,14 @@ namespace Complete
         private float m_MovementInputValue;         // The current value of the movement input.
         private float m_TurnInputValue;             // The current value of the turn input.
         private float m_OriginalPitch;              // The pitch of the audio source at the start of the scene.
-        private bool isMine;                        // ????????????
+        private bool isMine;                        // 自分のタンクかどうか判定
         private ParticleSystem[] m_particleSystems; // References to all the particles systems used by the Tanks
         private Transform m_TurretTransform;
         private PhotonTransformView photonTransformView;
-        private bool isInvincible = false; // ??????????????
+        private bool isInvincible = false; // ワームホール使用中の無敵確認
         private bool canAct = true;
-        private Renderer[] renderers; // ????????
-        public bool isCooldown = false; // ????????
+        private Renderer[] renderers; // 点滅エフェクト用
+        public bool isCooldown = false; // クールダウン判定
         public delegate void InvincibilityChanged(bool state);
         public event InvincibilityChanged OnInvincibilityChanged;
 
@@ -57,7 +57,6 @@ namespace Complete
 
             m_MovementInputValue = 0f;
             m_TurnInputValue = 0f;
-            m_TurretTurnInputValue = 0f;
 
             m_particleSystems = GetComponentsInChildren<ParticleSystem>();
             foreach (var ps in m_particleSystems)
@@ -94,18 +93,18 @@ namespace Complete
 
         private void Update()
         {
-            if (!photonView.IsMine) return; // ??????????????
+            if (!photonView.IsMine) return; // 自分のタンク以外は操作しない
             m_MovementInputValue = Input.GetAxis(m_MovementAxisName);
             m_TurnInputValue = Input.GetAxis(m_TurnAxisName);
 
             EngineAudio();
-            if (!canAct) return; // ??????????
+            if (!canAct) return; // 行動制限中は操作不可
         }
 
         public void SetInvincible(bool state)
         {
             isInvincible = state;
-            OnInvincibilityChanged?.Invoke(state); // ????????
+            OnInvincibilityChanged?.Invoke(state); // 状態変更時に通知
         }
         private void FixedUpdate()
         {
@@ -213,7 +212,7 @@ namespace Complete
         [PunRPC]
         public void RPC_StopBlinking()
         {
-            StopAllCoroutines(); // ??????????
+            StopAllCoroutines(); // 点滅エフェクトを停止
             SetVisible(true);
         }
 

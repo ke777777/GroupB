@@ -1,14 +1,13 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
-
+using UnityEngine.SceneManagement;
 public class VersusPlayerButton : MonoBehaviour
 {
     [SerializeField] private Button versusPlayerButton;
 
-    private void Start()
+    void Start()
     {
-        versusplayerButton.onClick.AddListener(OnStartButtonClicked);
+        versusPlayerButton.onClick.AddListener(OnClicked);
     }
     private void OnClicked()
     {

@@ -52,11 +52,11 @@ namespace Complete
 
             if (PhotonNetwork.InRoom)
             {
-                AssignPlayerNumbers(); // ?????????????
+                AssignPlayerNumbers(); // プレイヤー番号を割り当てる
             }
             StartCoroutine(WaitForPlayerNumbersAndInitialize());
         }
-        // ??????????????????????????????????
+        // プレイヤー番号をマスタークライアントで割り当て、全クライアントで共有
         private void AssignPlayerNumbers()
         {
             if (PhotonNetwork.IsMasterClient)
@@ -74,7 +74,7 @@ namespace Complete
             }
         }
 
-        // ?????????????????????????
+        // 全てのプレイヤーがプレイヤー番号を受け取るのを待つ
         private IEnumerator WaitForPlayerNumbersAndInitialize()
         {
             while (true)
@@ -96,7 +96,7 @@ namespace Complete
                 yield return new WaitForSeconds(0.1f);
             }
             InitializeTanks();
-            SpawnMyTank(); // ?????????????????
+            SpawnMyTank(); // 各クライアントが自分のタンクを生成
             yield return StartCoroutine(FindAndAssignTanks());
             while (CountWinsManager.Instance == null)
             {
@@ -124,7 +124,7 @@ namespace Complete
                     m_ActorNumber = actorNumber,
                     m_Wins = 0
                 };
-                Debug.Log($"Player {playerNumber} wins initialized to {tankManager.m_Wins}"); // ???????
+                Debug.Log($"Player {playerNumber} wins initialized to {tankManager.m_Wins}"); // 初期化確認ログ
                 m_Tanks.Add(tankManager);
             }
             Debug.Log($"Initialized {m_Tanks.Count} TankManagers.");
@@ -161,7 +161,7 @@ namespace Complete
                 return;
             }
 
-            // MasterClient???????
+            // MasterClientがタンクを生成
             if (PhotonNetwork.IsMasterClient)
             {
                 foreach (Player player in PhotonNetwork.PlayerList)
@@ -178,7 +178,7 @@ namespace Complete
                             continue;
                         }
 
-                        // PlayerNumber?InstantiationData?????
+                        // PlayerNumberをInstantiationDataとして渡す
                         object[] initData = new object[] { player.ActorNumber };
 
                         GameObject tank = PhotonNetwork.Instantiate("CompleteTank", spawnTransform.position, spawnTransform.rotation, 0, initData);
@@ -216,7 +216,7 @@ namespace Complete
         {
             int actorNumber = PhotonNetwork.LocalPlayer.ActorNumber;
 
-            // ???TankManager???
+            // 自分のTankManagerを取得
             TankManager myTankManager = m_Tanks.FirstOrDefault(t => t.m_ActorNumber == actorNumber);
 
             if (myTankManager != null)
@@ -229,7 +229,7 @@ namespace Complete
                     return;
                 }
 
-                // ????????InstantiationData?????
+                // プレイヤー番号をInstantiationDataとして渡す
                 object[] initData = new object[] { myTankManager.m_PlayerNumber, actorNumber };
 
                 GameObject tank = PhotonNetwork.Instantiate("CompleteTank", spawnTransform.position, spawnTransform.rotation, 0, initData);
@@ -261,7 +261,7 @@ namespace Complete
             {
                 if (tank.m_PlayerNumber == playerNumber)
                 {
-                    // ???????????????????????
+                    // インスタンスがまだ存在しない場合はエラーを出力
                     if (tank.m_Instance == null)
                     {
                         Debug.LogError($"Tank instance for Player {playerNumber} is null. Cannot synchronize setup.");
@@ -303,7 +303,7 @@ namespace Complete
                     }
                 }
 
-                // ??????????????????????????????
+                // 全てのタンクにインスタンスが割り当てられた場合、ループを終了
                 if (m_Tanks.TrueForAll(t => t.m_Instance != null))
                 {
                     Debug.Log("All tanks have been assigned successfully.");
@@ -312,7 +312,7 @@ namespace Complete
                 yield return null;
             }
 
-            // ???????????????????
+            // 自分のタンクをカメラのターゲットに設定
             TankManager myTank = m_Tanks.FirstOrDefault(t => t.m_Instance != null && t.m_ActorNumber == PhotonNetwork.LocalPlayer.ActorNumber);
             if (myTank != null)
             {
@@ -377,7 +377,7 @@ namespace Complete
         {
             Debug.Log($"Player {otherPlayer.NickName} has left the room.");
 
-            // ??????????
+            // プレイヤー番号を取得
             int playerNumber = -1;
             if (otherPlayer.CustomProperties.ContainsKey("PlayerNumber"))
             {
@@ -388,68 +388,68 @@ namespace Complete
                 Debug.LogWarning($"PlayerNumber not found for {otherPlayer.NickName}.");
             }
 
-            // ????????
+            // メッセージを更新
             string playerInfo = playerNumber > 0 ? $"Player {playerNumber}" : "A player";
             string playerNameInfo = $" ({otherPlayer.NickName})";
             m_MessageText.text = $"{playerInfo}{playerNameInfo} has left the game.\nYou are the winner!";
 
-            // ????????????????????
+            // 相手が抜けた場合、自分が勝者になると想定
             TankManager myTank = m_Tanks.FirstOrDefault(t => t.m_Instance != null && t.m_Instance.GetComponent<PhotonView>().IsMine);
             TankManager opponentTank = m_Tanks.FirstOrDefault(t => t.m_PlayerNumber != myTank.m_PlayerNumber);
 
-            // ???????? (myTank???)
+            // 勝敗データを更新 (myTankが勝者)
             /*if (mySQLRequest != null && PhotonNetwork.IsMasterClient && myTank != null && opponentTank != null)
             {
                 mySQLRequest.UpdateGameCount(myTank.m_PlayerNumber, "n_win", opponentTank.m_PlayerNumber, "n_loss");
             }
             */
-            StartCoroutine(HandlePlayerLeft()); // 5????????????
+            StartCoroutine(HandlePlayerLeft()); // 5秒後にタイトル画面に戻る
         }
 
         private IEnumerator HandlePlayerLeft()
         {
-            // ?????????
+            // ゲームループを停止
             StopAllCoroutines();
 
-            // ??????????????????
+            // 残ったプレイヤーをゲームの勝者に設定
             m_GameWinner = m_Tanks.FirstOrDefault(t => t.m_Instance != null && t.m_Instance.GetComponent<PhotonView>().IsMine);
 
-            // ?????????
+            // 勝利数を更新しない
 
-            // ?????
+            // 勝者を更新
             if (m_GameWinner != null)
             {
                 Debug.Log($"{m_GameWinner.m_PlayerNumber} is the game winner due to opponent leaving.");
             }
 
-            // ?????????
+            // 勝利数の表示を更新
             CountWinsManager.Instance?.SetWinner(m_GameWinner?.m_PlayerNumber ?? 0);
 
-            // ????????
+            // メッセージを設定
             if (m_GameWinner != null)
             {
                 m_MessageText.text = $"{m_GameWinner.m_ColoredPlayerText} is the winner because the opponent has left the game!";
             }
 
-            // ???????????????????
+            // 一定時間待機してからタイトル画面に戻る
             yield return new WaitForSeconds(5f);
             PhotonNetwork.LoadLevel(SceneNames.TitleScene);
         }
 
         private void DestroyAllMines()
         {
-            GameObject[] mines = GameObject.FindGameObjectsWithTag("Mine"); // ????????
+            GameObject[] mines = GameObject.FindGameObjectsWithTag("Mine"); // 地雷をすべて取得
 
             foreach (var mine in mines)
             {
                 PhotonView minePhotonView = mine.GetComponent<PhotonView>();
                 if (minePhotonView != null && PhotonNetwork.IsMasterClient)
                 {
-                    PhotonNetwork.Destroy(mine); // ??????????????????
+                    PhotonNetwork.Destroy(mine); // マスタークライアントとして地雷を削除
                 }
                 else
                 {
-                    Destroy(mine); // ????????PhotonView????????
+                    Destroy(mine); // ローカルで削除（PhotonViewがない場合など）
                 }
             }
 
@@ -549,7 +549,7 @@ namespace Complete
             m_RoundWinner = GetRoundWinner();
             if (m_RoundWinner != null)
             {
-                // ???????????????????????RPC?????
+                // 勝利数を先にインクリメントし、その後少し待ってRPC反映を促す
                 IncrementWinCount(m_RoundWinner.m_PlayerNumber);
 
                 photonView.RPC(nameof(ShowEndMessageRPC), RpcTarget.All);
@@ -574,11 +574,11 @@ namespace Complete
             {
                 if (PhotonNetwork.IsMasterClient)
                 {
-                    // ????????
+                    // 勝者と敗者を特定
                     TankManager opponentTank = m_Tanks.FirstOrDefault(t => t.m_PlayerNumber != m_GameWinner.m_PlayerNumber);
                     if (opponentTank != null && mySQLRequest != null)
                     {
-                        // ??????MySQL???????
+                        // ここで初めてMySQLに勝敗数を反映
                         mySQLRequest.UpdateGameCount(m_GameWinner.m_PlayerNumber, "n_win", opponentTank.m_PlayerNumber, "n_loss");
                     }
                 }
@@ -601,7 +601,7 @@ namespace Complete
         [PunRPC]
         private void ShowEndMessageRPC()
         {
-            // ?????UpdateWinCounts??????????????m_Wins?????????????
+            // ここで必ずUpdateWinCountsが処理済みになっているので、m_Winsは正しい値に更新されている
             string message = EndMessage();
             m_MessageText.text = message;
         }
@@ -621,7 +621,7 @@ namespace Complete
 
             if (CountWinsManager.Instance != null)
             {
-                CountWinsManager.Instance.UpdateWinStars(); // ?????????
+                CountWinsManager.Instance.UpdateWinStars(); // 勝利数の表示を更新
             }
         }
         [PunRPC]
@@ -648,7 +648,7 @@ namespace Complete
                 }
             }
 
-            // ?????????????????
+            // 全クライアントに勝利数の更新を通知
             photonView.RPC(nameof(UpdateWinCounts), RpcTarget.All, playerNumber, GetTankWins(playerNumber));
 
             if (CountWinsManager.Instance != null)
@@ -808,29 +808,6 @@ namespace Complete
             foreach (var tank in m_Tanks)
             {
                 tank.DisableControl();
-            }
-        }
-
-
-        private void Awake()
-        {
-            if (Instance == null)
-            {
-                Instance = this;
-                DontDestroyOnLoad(gameObject);
-            }
-            else
-            {
-                Destroy(gameObject);
-            }
-        }
-
-        public void SetGameState(GameState newState)
-        {
-            if (currentState != newState)
-            {
-                currentState = newState;
-                OnGameStateChanged?.Invoke(newState); // ???????
             }
         }
     }

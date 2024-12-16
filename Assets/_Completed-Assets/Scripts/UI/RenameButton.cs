@@ -124,6 +124,7 @@ public class RenameButton : MonoBehaviour
         {
             // サーバーへユーザー名更新リクエストを送信
             StartCoroutine(UpdateUserName(userId, enteredName));
+            dialogPanel.SetActive(false);
         }
         else
         {
