@@ -22,7 +22,7 @@ namespace Complete
         [SerializeField] private GameObject completeShellPrefab;
         [SerializeField] private GameObject mineCartridgePrefab;
         [SerializeField] private GameObject shellCartridgePrefab;
-
+        private string uniqueKeySuffix;
         private int m_RoundNumber;                  // Which round the game is currently on.
         private WaitForSeconds m_StartWait;         // Used to have a delay whilst the round starts.
         private WaitForSeconds m_EndWait;           // Used to have a delay whilst the round or game ends.
@@ -40,6 +40,8 @@ namespace Complete
         private MySQLRequest mySQLRequest;
         private void Start()
         {
+            UserUtils.Initialize();
+            uniqueKeySuffix = System.Diagnostics.Process.GetCurrentProcess().Id.ToString();
             m_CameraControl = FindObjectOfType<CameraControl>();
             if (m_CameraControl == null)
             {
@@ -228,10 +230,13 @@ namespace Complete
                     Debug.LogError($"SpawnPoint for player {myTankManager.m_PlayerNumber} is null.");
                     return;
                 }
+                int userId = UserUtils.GetUserId();
+                if (userId == 0)
+                {
+                    Debug.LogError("UserID is 0. Check initialization process in RenameButton.");
+                }
 
-                // ÉvÉåÉCÉÑÅ[î‘çÜÇInstantiationDataÇ∆ÇµÇƒìnÇ∑
-                object[] initData = new object[] { myTankManager.m_PlayerNumber, actorNumber };
-
+                object[] initData = new object[] { myTankManager.m_PlayerNumber, actorNumber, userId };
                 GameObject tank = PhotonNetwork.Instantiate("CompleteTank", spawnTransform.position, spawnTransform.rotation, 0, initData);
 
                 if (tank != null)

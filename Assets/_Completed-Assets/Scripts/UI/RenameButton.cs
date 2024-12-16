@@ -40,9 +40,9 @@ public class RenameButton : MonoBehaviour
     private string uniqueKeySuffix; // 各エディタセッション固有のサフィックス
     private void Start()
     {
-        // uniqueKeySuffix をエディタプロセスIDを基に設定
-        uniqueKeySuffix = System.Diagnostics.Process.GetCurrentProcess().Id.ToString();
-        if (!PlayerPrefs.HasKey(UserIdKey + uniqueKeySuffix))
+        UserUtils.Initialize();
+
+        if (UserUtils.GetUserId() == 0)
         {
             // 初回登録処理
             InitializeNewPlayer();
@@ -50,7 +50,7 @@ public class RenameButton : MonoBehaviour
         else
         {
             // 既存のIDと名前をサーバーから取得
-            int userId = PlayerPrefs.GetInt(UserIdKey + uniqueKeySuffix);
+            int userId = UserUtils.GetUserId();
             StartCoroutine(GetUserNameFromServer(userId));
         }
         // Renameボタンがクリックされた時にOnClickedメソッドを呼び出す
@@ -69,13 +69,9 @@ public class RenameButton : MonoBehaviour
     {
         // 4桁のランダムなIDを生成
         int randomUserId = GenerateFourDigitUserId();
-        PlayerPrefs.SetInt(UserIdKey + uniqueKeySuffix, randomUserId);
-        PlayerPrefs.SetString(UserNameKey + uniqueKeySuffix, "NoName");
-        PlayerPrefs.Save();
-
+        UserUtils.SetUserIdAndName(randomUserId, "NoName");
         // サーバーに初期登録
         StartCoroutine(RegisterUserOnServer(randomUserId, "NoName"));
-
         // UIを更新
         DisplayUserInfo();
     }
@@ -90,9 +86,8 @@ public class RenameButton : MonoBehaviour
     private void DisplayUserInfo()
     {
         // PlayerPrefsからuser_idとuser_nameを取得
-        int userId = PlayerPrefs.GetInt(UserIdKey + uniqueKeySuffix);
-        string userName = PlayerPrefs.GetString(UserNameKey + uniqueKeySuffix);
-
+        int userId = UserUtils.GetUserId();
+        string userName = UserUtils.GetUserName();
         // 取得したユーザーIDと名前をTextコンポーネントに表示
         userIdText.text = "User ID: " + userId;
         userNameText.text = "User Name: " + userName;
@@ -117,7 +112,7 @@ public class RenameButton : MonoBehaviour
     private void ShowEnteredName()
     {
         string enteredName = nameInputField.text;  // 入力されたテキストを取得
-        int userId = PlayerPrefs.GetInt(UserIdKey + uniqueKeySuffix);  // PlayerPrefsからuser_idを取得
+        int userId = UserUtils.GetUserId();  // PlayerPrefsからuser_idを取得
 
         // 名前が制限を満たしているかチェック
         if (enteredName.Length >= 3 && enteredName.Length <= 15)

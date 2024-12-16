@@ -39,14 +39,19 @@ namespace Complete
 
             // ??????????????
             myPlayerNumber = myTank.m_PlayerNumber;
-            // ???ID?PlayerPrefs?????????????????
-            int userId = PlayerPrefs.GetInt("user_id");
-            // ??????????????
-            if (mySQLRequest != null)
+            PhotonView myTankView = myTank.m_Instance.GetComponent<PhotonView>();
+            int myUserId = 0;
+            if (myTankView.InstantiationData != null && myTankView.InstantiationData.Length > 2)
             {
-                mySQLRequest.GetPlayerData(userId, UpdateMyPlayerHUD, (error) =>
+                myUserId = (int)myTankView.InstantiationData[2];
+            }
+
+            // ??????????????
+            if (myUserId != 0 && mySQLRequest != null)
+            {
+                mySQLRequest.GetPlayerData(myUserId, UpdateMyPlayerHUD, (error) =>
                 {
-                    Debug.LogError($"Failed to fetch player name for user {userId}: {error}");
+                    Debug.LogError($"Failed to fetch player name for user {myUserId}: {error}");
                 });
             }
 
@@ -62,14 +67,20 @@ namespace Complete
 
             opponentPlayerNumber = opponentTank.m_PlayerNumber;
 
-            if (mySQLRequest != null)
+            PhotonView opponentView = opponentTank.m_Instance.GetComponent<PhotonView>();
+            int opponentUserId = 0;
+            if (opponentView.InstantiationData != null && opponentView.InstantiationData.Length > 2)
             {
-                mySQLRequest.GetPlayerData(opponentPlayerNumber, UpdateOpponentPlayerHUD, (error) =>
+                opponentUserId = (int)opponentView.InstantiationData[2];
+            }
+
+            if (opponentUserId != 0 && mySQLRequest != null)
+            {
+                mySQLRequest.GetPlayerData(opponentUserId, UpdateOpponentPlayerHUD, (error) =>
                 {
                     Debug.LogError($"Failed to fetch player name for opponent: {error}");
                 });
             }
-
 
             // ??????????HUD???
             //UpdatePlayerNumbers();
@@ -103,6 +114,7 @@ namespace Complete
             if (opponentPlayerName != null)
             {
                 opponentPlayerName.text = $"Name: {userName}";
+                opponentPlayerName.color = GetPlayerColor(opponentPlayerNumber);
             }
         }
         private void HandleError(string error)
