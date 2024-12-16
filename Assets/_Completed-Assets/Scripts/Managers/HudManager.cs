@@ -16,8 +16,10 @@ namespace Complete
         private int myPlayerNumber;
         private int opponentPlayerNumber;
 
+
         private void OnEnable()
         {
+            RenameButton.OnUserNameUpdated += UpdateMyPlayerHUD;
             if (gameManager != null)
             {
                 gameManager.GameStateChanged += HandleGameStateChanged;
@@ -37,6 +39,18 @@ namespace Complete
 
             // ローカルプレイヤー番号を取得
             myPlayerNumber = myTank.m_PlayerNumber;
+            // 自分のIDをPlayerPrefsから取得し、名前をサーバーから取得
+            int userId = PlayerPrefs.GetInt("user_id");
+            // 自分の名前をサーバーから取得
+            if (mySQLRequest != null)
+            {
+                mySQLRequest.GetPlayerData(userId, UpdateMyPlayerHUD, (error) =>
+                {
+                    Debug.LogError($"Failed to fetch player name for user {userId}: {error}");
+                });
+            }
+
+
 
             // 相手タンクが初期化されるまで待つ
             TankManager opponentTank = null;
@@ -48,14 +62,12 @@ namespace Complete
 
             opponentPlayerNumber = opponentTank.m_PlayerNumber;
 
-            // プレイヤーデータをHUDに表示
             if (mySQLRequest != null)
             {
-                // 自分のプレイヤーデータを取得
-                mySQLRequest.GetPlayerData(myPlayerNumber, UpdateMyPlayerHUD, HandleError);
-
-                // 相手のプレイヤーデータを取得
-                mySQLRequest.GetPlayerData(opponentPlayerNumber, UpdateOpponentPlayerHUD, HandleError);
+                mySQLRequest.GetPlayerData(opponentPlayerNumber, UpdateOpponentPlayerHUD, (error) =>
+                {
+                    Debug.LogError($"Failed to fetch player name for opponent: {error}");
+                });
             }
 
 
@@ -77,20 +89,20 @@ namespace Complete
             myTank.WeaponStockChanged += HandleWeaponStockChanged;
         }
 
-        private void UpdateMyPlayerHUD(PlayerData data)
+        private void UpdateMyPlayerHUD(string userName)
         {
             if (myPlayerName != null)
             {
-                myPlayerName.text = $"Name: {data.user_name}";
+                myPlayerName.text = $"Name: {userName}";
                 myPlayerName.color = GetPlayerColor(myPlayerNumber);
             }
         }
 
-        private void UpdateOpponentPlayerHUD(PlayerData data)
+        private void UpdateOpponentPlayerHUD(string userName)
         {
             if (opponentPlayerName != null)
             {
-                opponentPlayerName.text = $"Name: {data.user_name}";
+                opponentPlayerName.text = $"Name: {userName}";
             }
         }
         private void HandleError(string error)
@@ -148,6 +160,7 @@ namespace Complete
 
         private void OnDisable()
         {
+            RenameButton.OnUserNameUpdated -= UpdateMyPlayerHUD;
             if (gameManager != null)
             {
                 gameManager.GameStateChanged -= HandleGameStateChanged;

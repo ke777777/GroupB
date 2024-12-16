@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.Networking;
 using System.Collections;
+using System.Collections.Generic;
+
 
 public class MySQLRequest : MonoBehaviour
 {
@@ -14,7 +16,7 @@ public class MySQLRequest : MonoBehaviour
     }
 
     // プレイヤーデータ取得API呼び出し
-    public void GetPlayerData(int userId, System.Action<PlayerData> onSuccess, System.Action<string> onError = null)
+    public void GetPlayerData(int userId, System.Action<string> onSuccess, System.Action<string> onError = null)
     {
         string url = $"{baseUrl}/get_column_value?user_id={userId}&column_name=user_name";
         StartCoroutine(SendPlayerDataRequest(url, onSuccess, onError));
@@ -38,7 +40,7 @@ public class MySQLRequest : MonoBehaviour
         }
     }
 
-    private IEnumerator SendPlayerDataRequest(string url, System.Action<PlayerData> onSuccess, System.Action<string> onError)
+    private IEnumerator SendPlayerDataRequest(string url, System.Action<string> onSuccess, System.Action<string> onError)
     {
         Debug.Log($"Sending request to: {url}");
         using (UnityWebRequest request = UnityWebRequest.Get(url))
@@ -47,17 +49,16 @@ public class MySQLRequest : MonoBehaviour
 
             if (request.result == UnityWebRequest.Result.Success)
             {
-                Debug.Log($"Request Successful: {request.downloadHandler.text}");
+                Debug.Log($"Request Successful. Raw Response: {request.downloadHandler.text}");
                 try
                 {
-                    // JSON データを PlayerData に変換
-                    PlayerData data = JsonUtility.FromJson<PlayerData>(request.downloadHandler.text);
-                    onSuccess?.Invoke(data);
+                    // サーバーからのレスポンスをそのまま返す
+                    onSuccess?.Invoke(request.downloadHandler.text);
                 }
                 catch (System.Exception e)
                 {
-                    Debug.LogError($"Failed to parse PlayerData: {e.Message}");
-                    onError?.Invoke("Failed to parse PlayerData");
+                    Debug.LogError($"Failed to parse response: {e.Message}");
+                    onError?.Invoke("Failed to parse response");
                 }
             }
             else

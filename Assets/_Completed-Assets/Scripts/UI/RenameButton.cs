@@ -1,11 +1,14 @@
 using System.Collections;
 using System.Collections.Generic;
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Networking;  // UnityWebRequestを使用するために追加
 
 public class RenameButton : MonoBehaviour
 {
+    public delegate void UserNameUpdated(string newUserName);
+    public static event UserNameUpdated OnUserNameUpdated; // ユーザー名更新イベント
     [SerializeField]
     private Button reNameButton;  // リネームボタン
 
@@ -34,9 +37,22 @@ public class RenameButton : MonoBehaviour
     private const string UserIdKey = "user_id";  // PlayerPrefsのキー
     private const string UserNameKey = "user_name";
     private const string ServerUrl = "http://localhost:8080";  // サーバーのURL（ローカル環境など）
-
+    private string uniqueKeySuffix; // 各エディタセッション固有のサフィックス
     private void Start()
     {
+        // uniqueKeySuffix をエディタプロセスIDを基に設定
+        uniqueKeySuffix = System.Diagnostics.Process.GetCurrentProcess().Id.ToString();
+        if (!PlayerPrefs.HasKey(UserIdKey + uniqueKeySuffix))
+        {
+            // 初回登録処理
+            InitializeNewPlayer();
+        }
+        else
+        {
+            // 既存のIDと名前をサーバーから取得
+            int userId = PlayerPrefs.GetInt(UserIdKey + uniqueKeySuffix);
+            StartCoroutine(GetUserNameFromServer(userId));
+        }
         // Renameボタンがクリックされた時にOnClickedメソッドを呼び出す
         reNameButton.onClick.AddListener(OnClicked);
 
@@ -49,17 +65,40 @@ public class RenameButton : MonoBehaviour
         // UIにユーザーIDとユーザー名を表示
         DisplayUserInfo();
     }
+    private void InitializeNewPlayer()
+    {
+        // 4桁のランダムなIDを生成
+        int randomUserId = GenerateFourDigitUserId();
+        PlayerPrefs.SetInt(UserIdKey + uniqueKeySuffix, randomUserId);
+        PlayerPrefs.SetString(UserNameKey + uniqueKeySuffix, "NoName");
+        PlayerPrefs.Save();
+
+        // サーバーに初期登録
+        StartCoroutine(RegisterUserOnServer(randomUserId, "NoName"));
+
+        // UIを更新
+        DisplayUserInfo();
+    }
+    private int GenerateFourDigitUserId()
+    {
+        // GUID を使用して一意のハッシュ値を生成し、4桁に制限
+        return Math.Abs(Guid.NewGuid().GetHashCode()) % 9000 + 1000; // 1000～9999の範囲に制限
+    }
+
 
     // ユーザーIDと名前を画面に表示
     private void DisplayUserInfo()
     {
         // PlayerPrefsからuser_idとuser_nameを取得
-        int userId = PlayerPrefs.GetInt(UserIdKey);
-        string userName = PlayerPrefs.GetString(UserNameKey);
+        int userId = PlayerPrefs.GetInt(UserIdKey + uniqueKeySuffix);
+        string userName = PlayerPrefs.GetString(UserNameKey + uniqueKeySuffix);
 
         // 取得したユーザーIDと名前をTextコンポーネントに表示
         userIdText.text = "User ID: " + userId;
         userNameText.text = "User Name: " + userName;
+
+        // HUDにユーザー名を通知
+        OnUserNameUpdated?.Invoke(userName);
     }
 
     // Renameボタンがクリックされたときに呼ばれるメソッド
@@ -78,8 +117,8 @@ public class RenameButton : MonoBehaviour
     private void ShowEnteredName()
     {
         string enteredName = nameInputField.text;  // 入力されたテキストを取得
-        int userId = PlayerPrefs.GetInt(UserIdKey);  // PlayerPrefsからuser_idを取得
-        
+        int userId = PlayerPrefs.GetInt(UserIdKey + uniqueKeySuffix);  // PlayerPrefsからuser_idを取得
+
         // 名前が制限を満たしているかチェック
         if (enteredName.Length >= 3 && enteredName.Length <= 15)
         {
@@ -96,7 +135,7 @@ public class RenameButton : MonoBehaviour
     {
         // サーバーのURLを使用して、GETリクエストのURLを作成
         string url = $"{ServerUrl}/update_column_value?user_id={userId}&column_name={UserNameKey}&new_value={userName}";
-        
+
         // GETリクエストを送信
         using (UnityWebRequest webRequest = UnityWebRequest.Get(url))
         {
@@ -114,14 +153,55 @@ public class RenameButton : MonoBehaviour
                 // サーバーからの応答が成功の場合
                 string response = webRequest.downloadHandler.text;
                 Debug.Log("Server Response: " + response);
-                
+
                 // 名前が更新された場合
                 Debug.Log("User name updated successfully!");
-                    
+
                 // PlayerPrefsの名前を更新
-                PlayerPrefs.SetString(UserNameKey, userName);
+                PlayerPrefs.SetString(UserNameKey + uniqueKeySuffix, userName);
                 PlayerPrefs.Save();
                 DisplayUserInfo();
+            }
+        }
+    }
+    private IEnumerator RegisterUserOnServer(int userId, string userName)
+    {
+        string url = $"{ServerUrl}/add_id?user_id={userId}&user_name={userName}";
+        using (UnityWebRequest webRequest = UnityWebRequest.Get(url))
+        {
+            yield return webRequest.SendWebRequest();
+
+            if (webRequest.result == UnityWebRequest.Result.Success)
+            {
+                Debug.Log($"User registered successfully: {webRequest.downloadHandler.text}");
+            }
+            else
+            {
+                Debug.LogError($"Failed to register user: {webRequest.error}");
+            }
+        }
+    }
+    private IEnumerator GetUserNameFromServer(int userId)
+    {
+        string url = $"{ServerUrl}/get_column_value?user_id={userId}&column_name={UserNameKey}";
+
+        using (UnityWebRequest webRequest = UnityWebRequest.Get(url))
+        {
+            yield return webRequest.SendWebRequest();
+
+            if (webRequest.result == UnityWebRequest.Result.Success)
+            {
+                string userName = webRequest.downloadHandler.text;
+                Debug.Log("Fetched user name: " + userName);
+
+                // サーバーから取得した名前をPlayerPrefsに保存
+                PlayerPrefs.SetString(UserNameKey + uniqueKeySuffix, userName);
+                PlayerPrefs.Save();
+                DisplayUserInfo();
+            }
+            else
+            {
+                Debug.LogError("Failed to fetch user name: " + webRequest.error);
             }
         }
     }
