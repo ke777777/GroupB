@@ -33,4 +33,10 @@ public static class UserUtils
     {
         return PlayerPrefs.GetString(UserNameKey + UniqueKeySuffix, "NoName");
     }
+    public static void SetUserName(string newName)
+    {
+        PlayerPrefs.SetString(UserNameKey + UniqueKeySuffix, newName);
+        PlayerPrefs.Save();
+    }
+
 }

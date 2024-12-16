@@ -154,8 +154,8 @@ public class RenameButton : MonoBehaviour
                 Debug.Log("User name updated successfully!");
 
                 // PlayerPrefsの名前を更新
-                PlayerPrefs.SetString(UserNameKey + uniqueKeySuffix, userName);
-                PlayerPrefs.Save();
+                // UserUtils経由でUserName更新
+                UserUtils.SetUserName(userName);
                 DisplayUserInfo();
             }
         }
