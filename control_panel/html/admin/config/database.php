@@ -65,7 +65,7 @@ return [
         'mysql_two' => [
             'driver' => 'mysql',
             'url' => env('DB_URL'),
-            'host' => env('USERINFO_DB_HOST', 'user-mysql'),
+            'host' => env('USERINFO_DB_HOST', 'tokuron-mysql'),
             'port' => env('USERINFO_DB_PORT', '3306'),
             'database' => env('USERINFO_DB_DATABASE', 'my_database'),
             'username' => env('USERINFO_DB_USERNAME', 'root'),

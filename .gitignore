@@ -72,3 +72,11 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/aa/*
 
 */.DS_Store
+
+# MySQL socket file
+control_panel/mysql/mysql.sock
+
+# その他 MySQL 関連の不要なファイル
+control_panel/mysql/*.sock
+control_panel/mysql/*.pid
+control_panel/mysql/*.err

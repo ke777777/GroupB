@@ -25,11 +25,10 @@ public class StartButton : MonoBehaviour
     private void OnStartButtonClicked()
     {
         // PlayerPrefsにUserIDが保存されているか確認
-        if (PlayerPrefs.HasKey(UserIdKey))
+        if (UserUtils.GetUserId() != 0)
         {
-            // 既存のユーザーIDを取得
-            int userId = PlayerPrefs.GetInt(UserIdKey);
-            string userName = PlayerPrefs.GetString(UserNameKey);
+            int userId = UserUtils.GetUserId();
+            string userName = UserUtils.GetUserName();
 
             Debug.Log($"Existing User: {userName} (ID: {userId})");
 
