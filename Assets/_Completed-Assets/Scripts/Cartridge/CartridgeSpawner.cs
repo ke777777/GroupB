@@ -1,70 +1,104 @@
-using System.Collections;
 using UnityEngine;
+using System.Collections;
+using Photon.Pun;
 
-public class CartridgeSpawner : MonoBehaviour
+namespace Complete
 {
-    [SerializeField] private GameObject cartridgePrefab; // Cartridgeプレハブ
-    [SerializeField] private Vector3 spawnAreaSize = new Vector3(50f, 0f, 50f); // 生成範囲
-    [SerializeField] private float spawnInterval = 5f; // 生成間隔
-
-    private Coroutine spawnRoutine;
-
-    private void Start()
+    public class CartridgeSpawner : MonoBehaviour
     {
-        // GameManagerのイベントを監視
-        Complete.GameManager.Instance.OnGameStateChanged += HandleGameStateChanged;
-    }
+        [SerializeField] private CartridgeData cartridgeData;
+        private GameManager gameManager;
+        private Coroutine spawnCoroutine;
 
-    private void OnDestroy()
-    {
-        if (Complete.GameManager.Instance != null)
+        public void SpawnCartridge(CartridgeData data)
         {
-            Complete.GameManager.Instance.OnGameStateChanged -= HandleGameStateChanged;
-        }
-    }
-
-    private void HandleGameStateChanged(Complete.GameManager.GameState newState)
-    {
-        if (newState == Complete.GameManager.GameState.RoundPlaying)
-        {
-            // ゲームプレイ中にコルーチンを開始
-            spawnRoutine = StartCoroutine(SpawnRoutine());
-        }
-        else
-        {
-            // ゲームがプレイ中でなくなったらコルーチンを停止
-            if (spawnRoutine != null)
+            if (!PhotonNetwork.IsMasterClient)
             {
-                StopCoroutine(spawnRoutine);
-                spawnRoutine = null;
+                return;
+            }
+            if (data.cartridgePrefab == null)
+            {
+                Debug.LogError("cartridgePrefab?null???Instantiate??????");
+                return;
+            }
+
+            Vector3 randomPosition = new Vector3(
+                Random.Range(-40f, 40f), // X?????
+                1f,                      // Y??????
+                Random.Range(-40f, 40f)  // Z?????
+            );
+
+            GameObject prefab = Resources.Load<GameObject>(data.cartridgePrefab.name);
+
+            if (prefab != null)
+            {
+                GameObject cartridge = PhotonNetwork.Instantiate(prefab.name, randomPosition, Quaternion.identity);
+                /*if (cartridge != null)
+                {
+                    Debug.Log($"Instantiated cartridge prefab '{prefab.name}' at position {randomPosition}");
+                }
+                else
+                {
+                    Debug.LogError($"Failed to instantiate cartridge prefab '{prefab.name}'");
+                }*/
+            }
+            else
+            {
+                Debug.LogError($"Prefab '{data.cartridgePrefab.name}' not found in Resources.");
+            }
+        }
+
+        private void HandleGameStateChanged(GameManager.GameState newState)
+        {
+            if (!PhotonNetwork.IsMasterClient)
+                return;
+
+            if (newState == GameManager.GameState.RoundPlaying)
+            {
+                if (spawnCoroutine == null)
+                {
+                    spawnCoroutine = StartCoroutine(SpawnRoutine(cartridgeData));
+                }
+            }
+            else
+            {
+                if (spawnCoroutine != null)
+                {
+                    StopCoroutine(spawnCoroutine);
+                    spawnCoroutine = null;
+                }
+            }
+        }
+
+        private IEnumerator SpawnRoutine(CartridgeData data)
+        {
+            while (true)
+            {
+                SpawnCartridge(data);
+                yield return new WaitForSeconds(data.spawnFrequency);
+            }
+        }
+
+        private void Start()
+        {
+            gameManager = FindObjectOfType<GameManager>();
+
+            if (gameManager != null)
+            {
+                gameManager.GameStateChanged += HandleGameStateChanged;
+            }
+            if (!PhotonNetwork.IsMasterClient)
+            {
+                enabled = false; // ???????????????????????
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (gameManager != null)
+            {
+                gameManager.GameStateChanged -= HandleGameStateChanged;
             }
         }
     }
-
-    private IEnumerator SpawnRoutine()
-    {
-        while (true)
-        {
-            SpawnCartridge();
-            yield return new WaitForSeconds(spawnInterval);
-        }
-    }
-
-    private void SpawnCartridge()
-    {
-        Vector3 randomPosition = new Vector3(
-            Random.Range(-spawnAreaSize.x / 2, spawnAreaSize.x / 2),
-            1.0f, // 地面の高さ
-            Random.Range(-spawnAreaSize.z / 2, spawnAreaSize.z / 2)
-        );
-
-        Instantiate(cartridgePrefab, randomPosition, Quaternion.identity);
-    }
-
-    void OnDrawGizmos()
-    {
-        Gizmos.color = Color.green;
-        Gizmos.DrawSphere(transform.position, 0.5f); // スポーン位置に緑の球を描画
-    }
-
 }

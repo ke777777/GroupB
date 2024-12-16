@@ -1,132 +1,69 @@
-﻿using UnityEngine;
-
+using UnityEngine;
 namespace Complete
 {
     public class CameraControl : MonoBehaviour
     {
-        public float m_DampTime = 0.2f;                 // Approximate time for the camera to refocus.
-        public float m_ScreenEdgeBuffer = 4f;           // Space between the top/bottom most target and the screen edge.
-        public float m_MinSize = 6.5f;                  // The smallest orthographic size the camera can be.
-        [HideInInspector] public Transform[] m_Targets; // All the targets the camera needs to encompass.
-
+        public float m_DampTime = 0.05f;                 // Approximate time for the camera to refocus.
+        public float m_FollowDistance = 2f;             // The distance behind the target the camera should stay.
+        public float m_FollowHeight = 0.5f;               // The height of the camera relative to the target.
+        // [HideInInspector] public Transform[] m_Targets; // All the targets the camera needs to encompass.
+        private Transform m_Target;
 
         private Camera m_Camera;                        // Used for referencing the camera.
-        private float m_ZoomSpeed;                      // Reference speed for the smooth damping of the orthographic size.
         private Vector3 m_MoveVelocity;                 // Reference velocity for the smooth damping of the position.
-        private Vector3 m_DesiredPosition;              // The position the camera is moving towards.
+        private Vector3 m_CurrentPosition;              // The current position of the camera.
 
-
-        private void Awake ()
+        private void Awake()
         {
-            m_Camera = GetComponentInChildren<Camera> ();
+            m_Camera = GetComponentInChildren<Camera>();
         }
 
-
-        private void FixedUpdate ()
+        private void FixedUpdate()
         {
-            // Move the camera towards a desired position.
-            Move ();
-
-            // Change the size of the camera based.
-            Zoom ();
-        }
-
-
-        private void Move ()
-        {
-            // Find the average position of the targets.
-            FindAveragePosition ();
-
-            // Smoothly transition to that position.
-            transform.position = Vector3.SmoothDamp(transform.position, m_DesiredPosition, ref m_MoveVelocity, m_DampTime);
-        }
-
-
-        private void FindAveragePosition ()
-        {
-            Vector3 averagePos = new Vector3 ();
-            int numTargets = 0;
-
-            // Go through all the targets and add their positions together.
-            for (int i = 0; i < m_Targets.Length; i++)
+            // 自分のタンクを追跡
+            if (m_Target != null)
             {
-                // If the target isn't active, go on to the next one.
-                if (!m_Targets[i].gameObject.activeSelf)
-                    continue;
-
-                // Add to the average and increment the number of targets in the average.
-                averagePos += m_Targets[i].position;
-                numTargets++;
+                Move();
             }
+        }
 
-            // If there are targets divide the sum of the positions by the number of them to find the average.
-            if (numTargets > 0)
-                averagePos /= numTargets;
+        public void Move()
+        {
+            // Transform target = m_Targets[0];  // 最初のターゲットを使用
 
-            // Keep the same y value.
-            averagePos.y = transform.position.y;
+            // ターゲットの後ろにカメラを配置する位置を計算
+            Vector3 targetPosition = m_Target.position - (m_Target.forward * m_FollowDistance);
 
-            // The desired position is the average position;
-            m_DesiredPosition = averagePos;
+            // Y座標の設定
+            targetPosition.y = m_Target.position.y + m_FollowHeight + 5f;
+
+            targetPosition += m_Target.up * 0.3f; // 斜め上に移動（必要に応じて調整）
+
+            // カメラの位置を即座に設定
+            transform.position = targetPosition;
+
+            // カメラをターゲットの方向に向ける
+            transform.LookAt(m_Target.position + Vector3.up * (m_FollowHeight + 5f));
         }
 
 
-        private void Zoom ()
+        public void SetTarget(Transform target)
         {
-            // Find the required size based on the desired position and smoothly transition to that size.
-            float requiredSize = FindRequiredSize();
-            m_Camera.orthographicSize = Mathf.SmoothDamp (m_Camera.orthographicSize, requiredSize, ref m_ZoomSpeed, m_DampTime);
+            m_Target = target;
         }
-
-
-        private float FindRequiredSize ()
+        /* public void SetStartPositionAndSize()
         {
-            // Find the position the camera rig is moving towards in its local space.
-            Vector3 desiredLocalPos = transform.InverseTransformPoint(m_DesiredPosition);
-
-            // Start the camera's size calculation at zero.
-            float size = 0f;
-
-            // Go through all the targets...
-            for (int i = 0; i < m_Targets.Length; i++)
+            // カメラをターゲットの後ろに即座に移動させ、正しい高さに設定
+            if (m_Targets.Length > 0 && m_Targets[0] != null)
             {
-                // ... and if they aren't active continue on to the next target.
-                if (!m_Targets[i].gameObject.activeSelf)
-                    continue;
+                Transform target = m_Targets[0];  // 最初のターゲットを使用
 
-                // Otherwise, find the position of the target in the camera's local space.
-                Vector3 targetLocalPos = transform.InverseTransformPoint(m_Targets[i].position);
+                // ターゲットの後ろにカメラを配置する位置を計算
+                transform.position = target.position - (target.forward * m_FollowDistance) + (Vector3.up * m_FollowHeight);
 
-                // Find the position of the target from the desired position of the camera's local space.
-                Vector3 desiredPosToTarget = targetLocalPos - desiredLocalPos;
-
-                // Choose the largest out of the current size and the distance of the tank 'up' or 'down' from the camera.
-                size = Mathf.Max(size, Mathf.Abs(desiredPosToTarget.y));
-
-                // Choose the largest out of the current size and the calculated size based on the tank being to the left or right of the camera.
-                size = Mathf.Max(size, Mathf.Abs(desiredPosToTarget.x) / m_Camera.aspect);
+                // ターゲットを向く
+                transform.LookAt(target.position + Vector3.up * m_FollowHeight / 2f);
             }
-
-            // Add the edge buffer to the size.
-            size += m_ScreenEdgeBuffer;
-
-            // Make sure the camera's size isn't below the minimum.
-            size = Mathf.Max (size, m_MinSize);
-
-            return size;
-        }
-
-
-        public void SetStartPositionAndSize ()
-        {
-            // Find the desired position.
-            FindAveragePosition ();
-
-            // Set the camera's position to the desired position without damping.
-            transform.position = m_DesiredPosition;
-
-            // Find and set the required size of the camera.
-            m_Camera.orthographicSize = FindRequiredSize ();
-        }
+        } */
     }
 }

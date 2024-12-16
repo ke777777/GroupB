@@ -1,103 +1,185 @@
 using UnityEngine;
-using Complete;
-using System;
-
-public class HudManager : MonoBehaviour
+using UnityEngine.UI;
+using System.Collections;
+using System.Linq;
+using Photon.Pun;
+namespace Complete
 {
-    [SerializeField] private PlayerStockArea player1StockArea; // Player1のストックHUD
-    [SerializeField] private PlayerStockArea player2StockArea; // Player2のストックHUD
-    [SerializeField] private Complete.GameManager GameManager; // ゲームマネージャーへの参照
-
-    private TankManager player1TankManager;
-    private TankManager player2TankManager;
-
-   
-    private void OnEnable()
+    public class HudManager : MonoBehaviour
     {
-        if (GameManager != null)
+        [SerializeField] private PlayerStockArea playerStockArea;
+        [SerializeField] private GameManager gameManager;
+        [SerializeField] private MySQLRequest mySQLRequest; // MySQLRequest???
+        [SerializeField] private Text myPlayerName;
+        [SerializeField] private Text opponentPlayerName;
+
+        private int myPlayerNumber;
+        private int opponentPlayerNumber;
+
+
+        private void OnEnable()
         {
-            GameManager.OnGameStateChanged += HandleGameStateChanged;
-        }
-        if (GameManager.m_Tanks != null)
-        {
-            foreach (var tank in GameManager.m_Tanks)
+            RenameButton.OnUserNameUpdated += UpdateMyPlayerHUD;
+            if (gameManager != null)
             {
-                if (tank != null)
+                gameManager.GameStateChanged += HandleGameStateChanged;
+
+                StartCoroutine(SubscribeToLocalTank());
+            }
+        }
+        private IEnumerator SubscribeToLocalTank()
+        {
+            // ????????????????????
+            TankManager myTank = null;
+            while (myTank == null || myTank.m_Instance == null)
+            {
+                myTank = gameManager.m_Tanks.FirstOrDefault(t => t.m_Instance != null && t.m_Instance.GetComponent<PhotonView>().IsMine);
+                yield return new WaitForSeconds(0.1f);
+            }
+
+            // ??????????????
+            myPlayerNumber = myTank.m_PlayerNumber;
+            // ???ID?PlayerPrefs?????????????????
+            int userId = PlayerPrefs.GetInt("user_id");
+            // ??????????????
+            if (mySQLRequest != null)
+            {
+                mySQLRequest.GetPlayerData(userId, UpdateMyPlayerHUD, (error) =>
                 {
-                    tank.OnWeaponStockChanged += UpdatePlayerStockArea;
+                    Debug.LogError($"Failed to fetch player name for user {userId}: {error}");
+                });
+            }
+
+
+
+            // ????????????????
+            TankManager opponentTank = null;
+            while (opponentTank == null || opponentTank.m_Instance == null || opponentTank.m_PlayerNumber == 0)
+            {
+                opponentTank = gameManager.m_Tanks.FirstOrDefault(t => t.m_PlayerNumber != myPlayerNumber && t.m_Instance != null);
+                yield return new WaitForSeconds(0.1f);
+            }
+
+            opponentPlayerNumber = opponentTank.m_PlayerNumber;
+
+            if (mySQLRequest != null)
+            {
+                mySQLRequest.GetPlayerData(opponentPlayerNumber, UpdateOpponentPlayerHUD, (error) =>
+                {
+                    Debug.LogError($"Failed to fetch player name for opponent: {error}");
+                });
+            }
+
+
+            // ??????????HUD???
+            //UpdatePlayerNumbers();
+
+            myTank.WeaponStockChanged += HandleWeaponStockChanged;
+
+            // TankShooting???????????????UI???
+            var tankShooting = myTank.m_Instance.GetComponent<TankShooting>();
+            if (tankShooting != null)
+            {
+                var weaponStocks = tankShooting.GetWeaponStocks();
+                foreach (var weapon in weaponStocks)
+                {
+                    HandleWeaponStockChanged(myTank.m_PlayerNumber, weapon.Key, weapon.Value.CurrentWeaponNumber);
+                }
+            }
+            myTank.WeaponStockChanged += HandleWeaponStockChanged;
+        }
+
+        private void UpdateMyPlayerHUD(string userName)
+        {
+            if (myPlayerName != null)
+            {
+                myPlayerName.text = $"Name: {userName}";
+                myPlayerName.color = GetPlayerColor(myPlayerNumber);
+            }
+        }
+
+        private void UpdateOpponentPlayerHUD(string userName)
+        {
+            if (opponentPlayerName != null)
+            {
+                opponentPlayerName.text = $"Name: {userName}";
+            }
+        }
+        private void HandleError(string error)
+        {
+            Debug.LogError($"Failed to fetch player data: {error}");
+        }
+
+        private IEnumerator WaitForPlayerNumbers()
+        {
+            while (PhotonNetwork.PlayerList.All(p => !p.CustomProperties.ContainsKey("PlayerNumber")))
+            {
+                yield return new WaitForSeconds(0.1f);
+            }
+
+            var myTank = gameManager.m_Tanks.FirstOrDefault(t => t.m_Instance != null && t.m_Instance.GetComponent<PhotonView>().IsMine);
+            if (myTank != null)
+            {
+                myPlayerNumber = myTank.m_PlayerNumber;
+            }
+
+            var opponentTank = gameManager.m_Tanks.FirstOrDefault(t => t.m_PlayerNumber != myPlayerNumber && t.m_Instance != null);
+            if (opponentTank != null)
+            {
+                opponentPlayerNumber = opponentTank.m_PlayerNumber;
+            }
+
+            UpdatePlayerNumbers();
+        }
+        private void UpdatePlayerNumbers()
+        {
+            // ??????????????????
+            if (myPlayerName != null)
+            {
+                myPlayerName.text = $"Player {myPlayerNumber}";
+                myPlayerName.color = GetPlayerColor(myPlayerNumber);
+            }
+
+            // ??????????????????
+            if (opponentPlayerName != null)
+            {
+                opponentPlayerName.text = $"Player {opponentPlayerNumber}";
+                opponentPlayerName.color = GetPlayerColor(opponentPlayerNumber);
+            }
+        }
+
+        private Color GetPlayerColor(int playerNumber)
+        {
+            if (playerNumber == 1)
+                return Color.blue;
+            else if (playerNumber == 2)
+                return Color.red;
+            else
+                return Color.white;
+        }
+
+        private void OnDisable()
+        {
+            RenameButton.OnUserNameUpdated -= UpdateMyPlayerHUD;
+            if (gameManager != null)
+            {
+                gameManager.GameStateChanged -= HandleGameStateChanged;
+                var localTank = gameManager.m_Tanks.FirstOrDefault(t => t.m_Instance != null && t.m_Instance.GetComponent<PhotonView>().IsMine);
+                if (localTank != null)
+                {
+                    localTank.WeaponStockChanged -= HandleWeaponStockChanged;
                 }
             }
         }
-    }
 
-    private void OnDisable()
-    {
-        if (GameManager != null)
+        private void HandleGameStateChanged(GameManager.GameState newState)
         {
-            GameManager.OnGameStateChanged -= HandleGameStateChanged;
+            bool isGameActive = (newState == GameManager.GameState.RoundPlaying);
+            playerStockArea.gameObject.SetActive(isGameActive);
         }
-        if (GameManager.m_Tanks != null)
+        private void HandleWeaponStockChanged(int playerNumber, string weaponName, int currentStock)
         {
-            foreach (var tank in GameManager.m_Tanks)
-            {
-                if (tank != null)
-                {
-                    tank.OnWeaponStockChanged -= UpdatePlayerStockArea;
-                }
-            }
-        }
-    }
-
-    /// <summary>
-    /// ゲームの状態が変化した際にHUDの表示を切り替えます。
-    /// </summary>
-    /// <param name="newState">現在のゲーム状態</param>
-    
-    private void HandleGameStateChanged(Complete.GameManager.GameState newState)
-    {
-        switch (newState)
-        {
-            case Complete.GameManager.GameState.RoundPlaying:
-                ShowHUD(true);
-                break;
-            case Complete.GameManager.GameState.RoundStarting:
-            case Complete.GameManager.GameState.RoundEnding:
-                ShowHUD(false);
-                break;
-        }
-    }
-    // private void HandleGameStateChanged(Complete.GameManager.GameState newState)
-    // {
-    //     bool isHUDActive = newState == Complete.GameManager.GameState.RoundPlaying; // プレイ中のみHUDを表示
-    //     player1StockArea.gameObject.SetActive(isHUDActive);
-    //     player2StockArea.gameObject.SetActive(isHUDActive);
-    // }
-
-
-
-    /// <summary>
-    /// HUDの表示を切り替える
-    /// </summary>
-    /// <param name="isVisible">表示するかどうか</param>
-    private void ShowHUD(bool isVisible)
-    {
-        gameObject.SetActive(isVisible);
-    }
-
-    /// <summary>
-    /// プレイヤーの砲弾ストック情報を更新する
-    /// </summary>
-    /// <param name="playerNumber">プレイヤー番号</param>
-    /// <param name="newStock">新しいストック数</param>
-    private void UpdatePlayerStockArea(int playerNumber, int newStock)
-    {
-        if (playerNumber == 1)
-        {
-            player1StockArea.UpdatePlayerStockArea(newStock);
-        }
-        else if (playerNumber == 2)
-        {
-            player2StockArea.UpdatePlayerStockArea(newStock);
+            playerStockArea.UpdatePlayerStockArea(weaponName, currentStock);
         }
     }
 }

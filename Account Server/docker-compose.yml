@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  centos:
+    image: centos:centos7
+    container_name: centos-container
+    ports:
+      - "8080:8080"
+    command: /bin/bash -c "yum update -y && yum install -y nano && yum install -y python3 && pip3 install pymysql && python3 -m pip install --upgrade pip && pip3 install cryptography && sleep infinity"
+    volumes:
+      - "${USERPROFILE}/Desktop/Account Server/Connecting two containers/CentOS-Base.repo:/etc/yum.repos.d/CentOS-Base.repo"
+      - "${USERPROFILE}/Desktop/Account Server/python:/python-files"
+    networks:
+      - tokuron-network
+
+  mysql:
+    image: mysql:8.4
+    container_name: tokuron-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: secret123
+    volumes:
+      - tokuron:/var/lib/mysql
+      - "${USERPROFILE}/Desktop/Account Server/sql/01_init.sql:/docker-entrypoint-initdb.d/01_init.sql"
+      - "${USERPROFILE}/Desktop/Account Server/sql/02_id_table.sql:/docker-entrypoint-initdb.d/02_id_table.sql"
+      - "${USERPROFILE}/Desktop/Account Server/sql/03_ranking_table.sql:/docker-entrypoint-initdb.d/03_ranking_table.sql"
+      - "${USERPROFILE}/Desktop/Account Server/sql/04_ad_check.sql:/docker-entrypoint-initdb.d/04_ad_check.sql"
+      - "${USERPROFILE}/Desktop/Account Server/sql/05_ad_insert.sql:/docker-entrypoint-initdb.d/05_ad_insert.sql"
+      - "${USERPROFILE}/Desktop/Account Server/sql/06_update_game_count.sql:/docker-entrypoint-initdb.d/06_update_game_count.sql"
+    networks:
+      - tokuron-network
+
+networks:
+  tokuron-network:
+    driver: bridge
+
+volumes:
+  tokuron:

@@ -1,64 +1,66 @@
-using System.Collections;
 using UnityEngine;
+using System.Collections;
+using Photon.Pun;
+using Complete;
 
-public class Cartridge : MonoBehaviour
+namespace Complete
 {
-    public float lifetime = 5f;           // 消滅までの時間
-    public float blinkStartTime = 3f;    // 明滅を開始する時間
-    public float blinkInterval = 0.2f;   // 明滅の間隔
-
-    private Renderer m_Renderer;         // Rendererコンポーネント
-
-    private void Start()
+    public class Cartridge : MonoBehaviourPun
     {
-        // Rendererコンポーネントを取得
-        // m_Renderer = GetComponent<Renderer>();
+        public float blinkDuration = 3.0f; // ????????
+        public float blinkInterval = 0.2f; // ?????
 
-        // if (m_Renderer == null)
-        // {
-        //     Debug.LogError("Renderer component is missing on this GameObject.");
-        //     return; // 処理を中断
-        // }
-        m_Renderer = GetComponent<Renderer>();
-        if (m_Renderer != null)
+        [SerializeField] public CartridgeData cartridgeData;
+
+        private Renderer cartridgeRenderer;
+
+        private void Start()
         {
-            m_Renderer.enabled = true; // レンダラーを有効にする
-        }
-        else
-        {
-            Debug.LogWarning("The cartridge prefab does not have a Renderer attached.");
+            // Renderer??????????
+            cartridgeRenderer = GetComponent<Renderer>();
+
+            // ?????
+            StartCoroutine(BlinkAndDestroy());
         }
 
-        // 明滅と消滅の処理をコルーチンで実行
-        StartCoroutine(BlinkAndDestroy());
-    }
-
-    private IEnumerator BlinkAndDestroy()
-    {
-        float startTime = Time.time; // 開始時の経過時間
-        bool isVisible = true; // 表示状態
-
-        // 明滅を開始するまで待機
-        yield return new WaitForSeconds(blinkStartTime);
-
-        // 明滅処理
-        while (Time.time < startTime + lifetime)
+        private IEnumerator BlinkAndDestroy()
         {
-            if (m_Renderer != null)
+            float elapsedTime = 0f;
+
+            // ?????????????????
+            while (elapsedTime < blinkDuration)
             {
-                isVisible = !isVisible;
-                m_Renderer.enabled = isVisible; // 状態が変わる時だけ更新
+                // Renderer????????????
+                cartridgeRenderer.enabled = !cartridgeRenderer.enabled;
+
+                // ????????
+                yield return new WaitForSeconds(blinkInterval);
+
+                // ???????
+                elapsedTime += blinkInterval;
             }
-            yield return new WaitForSeconds(blinkInterval);
+
+            // ?????????
+            Destroy(gameObject);
         }
 
-        // 明滅終了後に非表示に設定
-        if (m_Renderer != null)
+        private void OnTriggerEnter(Collider other)
         {
-            m_Renderer.enabled = false;
+            if (other.CompareTag("Player"))
+            {
+                TankShooting tankShooting = other.GetComponent<TankShooting>();
+                if (tankShooting != null && tankShooting.photonView.IsMine)
+                {
+                    tankShooting.GainingWeaponNumber(cartridgeData.weaponType);
+                    photonView.RPC(nameof(DestroyCartridge), RpcTarget.MasterClient);
+                }
+            }
         }
 
-        // 最後にオブジェクトを消去
-        Destroy(gameObject);
+        [PunRPC]
+        private void DestroyCartridge()
+        {
+            PhotonNetwork.Destroy(gameObject);
+        }
     }
 }

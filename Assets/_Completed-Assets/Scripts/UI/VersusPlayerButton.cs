@@ -4,15 +4,14 @@ using UnityEngine.UI;
 
 public class VersusPlayerButton : MonoBehaviour
 {
-    [SerializeField] private Button versusplayerButton;
+    [SerializeField] private Button versusPlayerButton;
 
     private void Start()
     {
         versusplayerButton.onClick.AddListener(OnStartButtonClicked);
     }
-
-    private void OnStartButtonClicked()
+    private void OnClicked()
     {
-        SceneManager.LoadScene(SceneNames.GameScene);
+        SceneManager.LoadScene(SceneNames.LobbyScene);
     }
 }
