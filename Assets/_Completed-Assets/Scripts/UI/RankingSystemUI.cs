@@ -11,14 +11,21 @@ public class RankingSystemUI : MonoBehaviour
     private string serverURL = "http://localhost:8080/update_game_count";
 
     // ユーザーIDとカラム名（例として固定値）
-    private string user_id1 = "703";
+    private string user_id1 = "4523";
     private string column_name1 = "n_win";
-    private string user_id2 = "704";
+    private string user_id2 = "4512";
     private string column_name2 = "n_win";
+    private const string UserIdKey = "user_id";
 
     // UIの設定
     [SerializeField] private Text rankTextPrefab; // ランキングを表示するTextプレハブ
     [SerializeField] private RectTransform contentPanel; // ContentのRectTransform
+    [SerializeField] private Text clientRankText; // クライアントのランキングを表示するText
+
+    // フラグ
+    private int pFlag1 = 0;
+    private int pFlag2 = 0;
+    private int clientFlag = 0; // クライアントのフラグ
 
     void Start()
     {
@@ -72,10 +79,14 @@ public class RankingSystemUI : MonoBehaviour
             // JSONを手動で解析して必要な部分（top_10_ranking）を取り出す
             var jsonResponse = JsonConvert.DeserializeObject<Dictionary<string, object>>(response);
 
+            // p_flag1とp_flag2を取得
+            pFlag1 = jsonResponse.ContainsKey("p_flag1") ? int.Parse(jsonResponse["p_flag1"].ToString()) : 0;
+            pFlag2 = jsonResponse.ContainsKey("p_flag2") ? int.Parse(jsonResponse["p_flag2"].ToString()) : 0;
+
             // "top_10_ranking"を取得してリスト形式にキャスト
             var top10Ranking = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(jsonResponse["p_top_10_ranking"].ToString());
 
-            // RankingをUIに更新
+            // ランキングをUIに更新
             UpdateRanking(top10Ranking);
         }
         catch (System.Exception e)
@@ -96,6 +107,11 @@ public class RankingSystemUI : MonoBehaviour
             }
         }
 
+        // クライアントのuser_idを取得（PlayerPrefsに保存されている）
+        int UserId = PlayerPrefs.GetInt(UserIdKey);
+        string clientUserId = UserId.ToString();
+        Debug.Log(clientUserId);
+        
         // ランキングの表示
         foreach (var user in top10Ranking)
         {
@@ -108,6 +124,13 @@ public class RankingSystemUI : MonoBehaviour
             int nLoss = user.ContainsKey("n_loss") && user["n_loss"] != null ? int.Parse(user["n_loss"].ToString()) : 0;
             float winRate = float.Parse(user["win_rate"].ToString());
             int userRank = int.Parse(user["user_rank"].ToString()); // user_rankを取り出す
+            string userId = user["user_id"].ToString();
+
+            // クライアントのuser_idと一致する場合はclientFlagを立てる
+            if (userId == clientUserId)
+            {
+                clientFlag = 1; // クライアントのフラグを立てる
+            }
 
             // テキストを設定
             newRankText.text = userRank + ". " + userName + ": Wins " + nWin + ", Losses " + nLoss + ", Win Rate " + winRate.ToString("F2");
@@ -116,6 +139,36 @@ public class RankingSystemUI : MonoBehaviour
             newRankText.horizontalOverflow = HorizontalWrapMode.Overflow;
             newRankText.verticalOverflow = VerticalWrapMode.Overflow;
             newRankText.resizeTextForBestFit = true;  // フォントサイズを調整
+        }
+
+        // クライアントのフラグが0なら「You are out of the ranking」を表示、そうでなければクライアントのランキングを表示
+        if (clientFlag == 0)
+        {
+            clientRankText.text = "You are out of the ranking";
+        }
+        else
+        {
+            // クライアントのランキング情報を表示
+            var clientData = top10Ranking.Find(user => user["user_id"].ToString() == clientUserId);
+            
+            if (clientData != null)
+            {
+                // クライアントの情報を取得
+                int nWin = int.Parse(clientData["n_win"].ToString());
+                int nLoss = clientData.ContainsKey("n_loss") && clientData["n_loss"] != null ? int.Parse(clientData["n_loss"].ToString()) : 0;
+                float winRate = float.Parse(clientData["win_rate"].ToString());
+                int userRank = int.Parse(clientData["user_rank"].ToString());
+
+                // クライアントのランキングを表示
+                clientRankText.text = $"Your Rank: {userRank}, Wins: {nWin}, Losses: {nLoss}, Win Rate: {winRate:F2}";
+                
+                // pFlag1が0の場合、「rank up」を表示し、その部分だけ色を変更
+                if (pFlag1 == 1)
+                {
+                    // "rank up"部分を赤色に変える（色の指定はお好みで調整）
+                    clientRankText.text += " <color=#FF0000>(Rank Up)</color>";
+                }
+            }
         }
 
         // ContentPanelの高さを更新
